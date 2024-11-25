@@ -1,13 +1,85 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Item } from './types';
 import ItemGrid from './components/ItemGrid';
-import { Search, AlertCircle, Filter } from 'lucide-react';
+import { Search, AlertCircle, Filter, Check } from 'lucide-react';
+
+interface DropdownProps {
+  options: string[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder: string;
+}
+
+function MultiSelect({ options, selected, onChange, placeholder }: DropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleOption = (option: string) => {
+    const newSelected = selected.includes(option)
+      ? selected.filter(item => item !== option)
+      : [...selected, option];
+    onChange(newSelected);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div
+        className="flex items-center gap-2 w-full cursor-pointer py-2 px-3 bg-slate-700 border border-slate-600 rounded-lg text-white"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <Filter className="w-5 h-5 text-gray-400" />
+        <span className="flex-1 text-left">
+          {selected.length ? selected.join(', ') : placeholder}
+        </span>
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-10 mt-1 w-full bg-slate-700 border border-slate-600 rounded-lg shadow-lg">
+          {options.map(option => (
+            <div
+              key={option}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-600 cursor-pointer"
+              onClick={() => toggleOption(option)}
+            >
+              <div className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                {selected.includes(option) && (
+                  <Check className="w-3 h-3 text-blue-500" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-white">
+                {placeholder === "All Rarities" && (
+                  <img 
+                    src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/rarities/${option.toLowerCase()}.png`}
+                    alt=""
+                    className="w-4 h-4"
+                  />
+                )}
+                <span>{option}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedRarity, setSelectedRarity] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,14 +107,9 @@ function App() {
   const uniqueRarities = Array.from(new Set(items.map(item => item.rarity))).sort();
 
   const filteredItems = items.filter(item => {
-    const matchesSearch = 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.rarity.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = selectedType ? item.type === selectedType : true;
-    const matchesRarity = selectedRarity ? item.rarity === selectedRarity : true;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(item.type);
+    const matchesRarity = selectedRarities.length === 0 || selectedRarities.includes(item.rarity);
 
     return matchesSearch && matchesType && matchesRarity;
   });
@@ -67,49 +134,39 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white shadow-md">
+    <div className="min-h-screen bg-slate-900">
+      <header className="bg-slate-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Item Wiki</h1>
+          <h1 className="text-3xl font-bold text-white">Tokiemon Item Wiki</h1>
           <div className="mt-4 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search items..."
+                placeholder="Search items by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
               />
             </div>
             
             <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 min-w-[200px]">
-                <Filter className="w-5 h-5 text-gray-400" />
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="flex-1 py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All Types</option>
-                  {uniqueTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+              <div className="flex-1 min-w-[200px]">
+                <MultiSelect
+                  options={uniqueTypes}
+                  selected={selectedTypes}
+                  onChange={setSelectedTypes}
+                  placeholder="All Types"
+                />
               </div>
 
-              <div className="flex items-center gap-2 min-w-[200px]">
-                <Filter className="w-5 h-5 text-gray-400" />
-                <select
-                  value={selectedRarity}
-                  onChange={(e) => setSelectedRarity(e.target.value)}
-                  className="flex-1 py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All Rarities</option>
-                  {uniqueRarities.map(rarity => (
-                    <option key={rarity} value={rarity}>{rarity}</option>
-                  ))}
-                </select>
+              <div className="flex-1 min-w-[200px]">
+                <MultiSelect
+                  options={uniqueRarities}
+                  selected={selectedRarities}
+                  onChange={setSelectedRarities}
+                  placeholder="All Rarities"
+                />
               </div>
             </div>
           </div>

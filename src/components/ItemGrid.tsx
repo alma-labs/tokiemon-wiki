@@ -19,33 +19,65 @@ export default function ItemGrid({ items }: ItemGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-2 md:gap-4 md:p-4">
         {items.map((item) => (
           <div
             key={item.id}
             onClick={() => setSelectedItem(item)}
-            className={`${rarityColors[item.rarity as keyof typeof rarityColors]} 
-              rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 cursor-pointer
-              transform hover:scale-105 transition-transform duration-200`}
+            className="bg-[#1a2432] rounded border border-[#2a3844] shadow-[0_0_10px_rgba(0,0,0,0.5)] 
+              hover:shadow-[0_0_15px_rgba(0,0,0,0.7)] transition-shadow duration-200 cursor-pointer
+              transform hover:scale-105 transition-transform duration-200"
           >
-            <div className="p-4">
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-full h-48 object-contain mb-4"
-              />
-              <h3 className="text-lg font-bold mb-2 truncate">{item.name}</h3>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-600">{item.type}</span>
-                <span className={`text-sm font-medium px-2 py-1 rounded-full
-                  ${item.rarity === 'Common' ? 'bg-gray-200 text-gray-700' :
-                    item.rarity === 'Uncommon' ? 'bg-green-200 text-green-700' :
-                    item.rarity === 'Rare' ? 'bg-blue-200 text-blue-700' :
-                    item.rarity === 'Epic' ? 'bg-purple-200 text-purple-700' :
-                    'bg-yellow-200 text-yellow-700'}`}
-                >
-                  {item.rarity}
-                </span>
+            <div className="p-3 md:p-4">
+              <div className="bg-[#141c27] rounded p-2 mb-3 shadow-inner">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-32 md:h-48 object-contain"
+                />
+              </div>
+              <h3 className="text-base md:text-lg font-bold mb-2 truncate text-[#e2e8f0]">{item.name}</h3>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+                  <span className="text-xs md:text-sm font-medium text-[#94a3b8]">{item.type}</span>
+                  <span className={`text-xs md:text-sm font-medium px-2 py-1 rounded-full flex items-center gap-1 w-fit
+                    ${item.rarity === 'Common' ? 'bg-blue-950 text-blue-200' :
+                      item.rarity === 'Uncommon' ? 'bg-green-900 text-green-200' :
+                      item.rarity === 'Rare' ? 'bg-red-900 text-red-200' :
+                      item.rarity === 'Epic' ? 'bg-purple-900 text-purple-200' :
+                      'bg-cyan-900 text-cyan-200 shadow-[0_0_10px_rgba(34,211,238,0.3)]'}`}
+                  >
+                    <img 
+                      src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/rarities/${item.rarity.toLowerCase()}.png`}
+                      alt=""
+                      className="w-3 h-3 md:w-4 md:h-4"
+                    />
+                    {item.rarity}
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-1 text-[10px] text-[#94a3b8]/70">
+                  {item.impacts.map((impact, index) => (
+                    <span key={index} className="flex items-center">
+                      {impact.type === 'Mood' ? 'Energy' : impact.type}
+                      {impact.type === 'Mood' && !impact.amount && impact.time ? (
+                        <span className="text-green-400/70">Max</span>
+                      ) : (
+                        impact.amount && <span className="text-green-400/70">+{impact.amount}</span>
+                      )}
+                      {impact.time && <span className="text-blue-400/70">{impact.time/3600}h</span>}
+                      {index < item.impacts.length - 1 && "·"}
+                    </span>
+                  ))}
+                  {item.impacts.length > 0 && item.requirements.length > 0 && " | "}
+                  {item.requirements.map((req, index) => (
+                    <span key={index} className="flex items-center">
+                      {req.type}
+                      <span className="text-yellow-400/70">{req.amount}</span>
+                      {index < item.requirements.length - 1 && "·"}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
