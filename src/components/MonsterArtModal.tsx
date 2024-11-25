@@ -28,7 +28,7 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
   });
 
   const tiers = [
-    { name: 'Free (Always the Same)', purchaseTier: 0 },
+    { name: 'Free', purchaseTier: 0 },
     { name: 'Kawaii', purchaseTier: 1 },
     { name: 'Dragon', purchaseTier: 2 },
     { name: 'DEGEN', purchaseTier: 3 }

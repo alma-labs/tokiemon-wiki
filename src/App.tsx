@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Item, Community } from './types';
@@ -89,7 +90,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      <header className="bg-slate-800 shadow-lg">
+      <header className="bg-slate-800 shadow-lg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
@@ -142,19 +143,31 @@ function AppContent() {
         </div>
       </header>
 
-      <Routes>
-        <Route path="/items" element={<ItemsSection
-          items={items}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedTypes={selectedTypes}
-          setSelectedTypes={setSelectedTypes}
-          selectedRarities={selectedRarities}
-          setSelectedRarities={setSelectedRarities}
-        />} />
-        <Route path="/monsters" element={<MonstersSection communities={communities} />} />
-        <Route path="/" element={<Navigate to="/items" replace />} />
-      </Routes>
+      <main>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <Routes location={location} key={location.pathname}>
+              <Route path="/items" element={<ItemsSection
+                items={items}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+                selectedRarities={selectedRarities}
+                setSelectedRarities={setSelectedRarities}
+              />} />
+              <Route path="/monsters" element={<MonstersSection communities={communities} />} />
+              <Route path="/" element={<Navigate to="/items" replace />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
