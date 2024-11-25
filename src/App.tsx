@@ -104,16 +104,28 @@ function AppContent() {
               </h1>
               <p className="text-[#94a3b8] mt-1">Browse and discover the world of Tokiemon</p>
             </div>
-            <a 
-              href="https://app.tokiemon.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 md:mt-0 flex items-center justify-center gap-2 px-6 py-2 bg-[#1da1f2] hover:bg-[#1a91da] 
-                text-white rounded-lg transition-colors duration-200 font-medium shadow-[0_0_10px_rgba(29,161,242,0.3)]"
-            >
-              <span>Play Tokiemon</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
+            <div className="mt-4 md:mt-0 flex gap-2">
+              <a 
+                href="https://docs.tokiemon.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 
+                  text-white rounded-lg transition-colors duration-200 font-medium"
+              >
+                <span>View Docs</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <a 
+                href="https://app.tokiemon.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-2 bg-[#1da1f2] hover:bg-[#1a91da] 
+                  text-white rounded-lg transition-colors duration-200 font-medium shadow-[0_0_10px_rgba(29,161,242,0.3)]"
+              >
+                <span>Play Tokiemon</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           </div>
 
           <nav className="flex space-x-1">
