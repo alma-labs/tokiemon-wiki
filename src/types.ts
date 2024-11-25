@@ -52,3 +52,13 @@ export interface Community {
   updatedAt: string;
   wins: number;
 }
+
+export interface CommunityMetadata {
+  communityId: string;
+  name: string;
+  symbol: string;
+  logoURI: string;
+  extraPaymentTokens: any[];
+  tags: string[];
+  inactive?: boolean;
+}

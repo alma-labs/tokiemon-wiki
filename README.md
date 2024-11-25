@@ -1,4 +1,4 @@
-# Tokiemon Item Wiki 🎮
+# Tokiemon In-Game Wiki 🎮
 
 Interactive wiki for browsing and discovering Tokiemon items, consumables, and equipment. Built with React, TypeScript, and Tailwind CSS.
 
