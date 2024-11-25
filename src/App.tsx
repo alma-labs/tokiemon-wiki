@@ -1,3 +1,4 @@
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Item, Community } from './types';
 import ItemsSection from './components/ItemsSection';
@@ -23,7 +24,9 @@ function ErrorScreen({ error }: { error: string }) {
   );
 }
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState<'items' | 'monsters'>('items');
   const [items, setItems] = useState<Item[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +73,12 @@ function App() {
     fetchCommunities();
   }, [activeSection]);
 
+  // Keep nav and URL in sync
+  useEffect(() => {
+    const path = location.pathname.slice(1) || 'items';
+    setActiveSection(path as 'items' | 'monsters');
+  }, [location]);
+
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
 
@@ -103,7 +112,7 @@ function App() {
 
           <nav className="flex space-x-1">
             <button
-              onClick={() => setActiveSection('items')}
+              onClick={() => navigate('/items')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 activeSection === 'items' 
                   ? 'bg-slate-700 text-white' 
@@ -114,7 +123,7 @@ function App() {
               Items
             </button>
             <button
-              onClick={() => setActiveSection('monsters')}
+              onClick={() => navigate('/monsters')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 activeSection === 'monsters' 
                   ? 'bg-slate-700 text-white' 
@@ -128,8 +137,8 @@ function App() {
         </div>
       </header>
 
-      {activeSection === 'items' ? (
-        <ItemsSection
+      <Routes>
+        <Route path="/items" element={<ItemsSection
           items={items}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -137,12 +146,14 @@ function App() {
           setSelectedTypes={setSelectedTypes}
           selectedRarities={selectedRarities}
           setSelectedRarities={setSelectedRarities}
-        />
-      ) : (
-        <MonstersSection communities={communities} />
-      )}
+        />} />
+        <Route path="/monsters" element={<MonstersSection communities={communities} />} />
+        <Route path="/" element={<Navigate to="/items" replace />} />
+      </Routes>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return <AppContent />;
+}
