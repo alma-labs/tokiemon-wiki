@@ -38,27 +38,30 @@ function AppContent() {
 
   useEffect(() => {
     const fetchItems = async () => {
-      try {
-        const response = await fetch('https://api.tokiemon.io/items/all');
-        if (!response.ok) throw new Error('Failed to fetch items');
-        const data = await response.json();
-        // Sort items by ID
-        data.sort((a: Item, b: Item) => parseInt(a.id) - parseInt(b.id));
-        setItems(data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load items. Please try again later.');
-      } finally {
-        setLoading(false);
+      if (location.pathname === '/items' || (activeSection === 'items' && items.length === 0)) {
+        setLoading(true);
+        try {
+          const response = await fetch('https://api.tokiemon.io/items/all');
+          if (!response.ok) throw new Error('Failed to fetch items');
+          const data = await response.json();
+          data.sort((a: Item, b: Item) => parseInt(a.id) - parseInt(b.id));
+          setItems(data);
+          setError(null);
+        } catch (err) {
+          setError('Failed to load items. Please try again later.');
+        } finally {
+          setLoading(false);
+        }
       }
     };
 
     fetchItems();
-  }, []);
+  }, [location.pathname, activeSection]);
 
   useEffect(() => {
     const fetchCommunities = async () => {
-      if (activeSection === 'monsters') {
+      if (location.pathname === '/monsters' || (activeSection === 'monsters' && communities.length === 0)) {
+        setLoading(true);
         try {
           const response = await fetch('https://api.tokiemon.io/leaderboards/communities');
           if (!response.ok) throw new Error('Failed to fetch communities');
@@ -66,12 +69,14 @@ function AppContent() {
           setCommunities(data.communities);
         } catch (err) {
           setError('Failed to load communities. Please try again later.');
+        } finally {
+          setLoading(false);
         }
       }
     };
 
     fetchCommunities();
-  }, [activeSection]);
+  }, [location.pathname, activeSection]);
 
   // Keep nav and URL in sync
   useEffect(() => {
