@@ -1,5 +1,5 @@
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 interface TokiemonData {
   tokiemon: Array<{
@@ -19,36 +19,44 @@ interface MonsterArtModalProps {
   isLoading: boolean;
 }
 
-export default function MonsterArtModal({ communityId, onClose, data, isLoading }: MonsterArtModalProps) {
+export default function MonsterArtModal({
+  communityId,
+  onClose,
+  data,
+  isLoading,
+}: MonsterArtModalProps) {
   const [currentPages, setCurrentPages] = useState<Record<number, number>>({
     0: 0,
     1: 0,
     2: 0,
-    3: 0
+    3: 0,
   });
 
   const tiers = [
-    { name: 'Free', purchaseTier: 0 },
-    { name: 'Kawaii', purchaseTier: 1 },
-    { name: 'Dragon', purchaseTier: 2 },
-    { name: 'DEGEN', purchaseTier: 3 }
+    { name: "Free", purchaseTier: 0 },
+    { name: "Kawaii", purchaseTier: 1 },
+    { name: "Dragon", purchaseTier: 2 },
+    { name: "DEGEN", purchaseTier: 3 },
   ];
 
   const getTierArt = (tier: number) => {
     if (tier === 0) {
-      return [{
-        image: `https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/starters/${communityId}.png`
-      }];
+      return [
+        {
+          image: `https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/starters/${communityId}.png`,
+        },
+      ];
     }
-    
-    return data?.tokiemon.filter(t => t.tokiemon.purchaseTier === tier) || [];
+
+    return data?.tokiemon.filter((t) => t.tokiemon.purchaseTier === tier) || [];
   };
 
   const handlePageChange = (tier: number, delta: number) => {
     const artworks = getTierArt(tier);
-    setCurrentPages(prev => ({
+    setCurrentPages((prev) => ({
       ...prev,
-      [tier]: (prev[tier] + delta + artworks.length) % Math.max(1, artworks.length)
+      [tier]:
+        (prev[tier] + delta + artworks.length) % Math.max(1, artworks.length),
     }));
   };
 
@@ -58,12 +66,14 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
-              <img 
+              <img
                 src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${communityId}.png`}
                 alt={communityId}
                 className="w-8 h-8"
               />
-              <h2 className="text-2xl font-bold">{communityId} Art Example Mints</h2>
+              <h2 className="text-2xl font-bold">
+                Current {communityId} Tokiemon Mints
+              </h2>
             </div>
             <button
               onClick={onClose}
@@ -79,10 +89,11 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {tiers.map(tier => {
+              {tiers.map((tier) => {
                 const artworks = getTierArt(tier.purchaseTier);
-                const currentArtwork = artworks[currentPages[tier.purchaseTier]];
-                
+                const currentArtwork =
+                  artworks[currentPages[tier.purchaseTier]];
+
                 return (
                   <div key={tier.name}>
                     <div className="text-lg font-medium mb-2">{tier.name}</div>
@@ -90,7 +101,11 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
                       {currentArtwork ? (
                         <>
                           <img
-                            src={'image' in currentArtwork ? currentArtwork.image : currentArtwork.tokiemon.image}
+                            src={
+                              "image" in currentArtwork
+                                ? currentArtwork.image
+                                : currentArtwork.tokiemon.image
+                            }
                             alt={`${communityId} ${tier.name}`}
                             className="w-full h-full object-contain"
                           />
@@ -106,7 +121,8 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
                                 <ChevronLeft className="w-4 h-4" />
                               </button>
                               <span className="text-xs bg-slate-800/80 px-2 py-1 rounded-full">
-                                {currentPages[tier.purchaseTier] + 1} / {artworks.length}
+                                {currentPages[tier.purchaseTier] + 1} /{" "}
+                                {artworks.length}
                               </span>
                               <button
                                 onClick={(e) => {
@@ -135,4 +151,4 @@ export default function MonsterArtModal({ communityId, onClose, data, isLoading 
       </div>
     </div>
   );
-} 
+}
