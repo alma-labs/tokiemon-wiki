@@ -14,4 +14,5 @@ export const config = createConfig({
     [base.id]: http(base.rpcUrls.default.http[0]),
     [baseSepolia.id]: http(baseSepolia.rpcUrls.default.http[0]),
   },
+  syncConnectedChain: true,
 }) 
