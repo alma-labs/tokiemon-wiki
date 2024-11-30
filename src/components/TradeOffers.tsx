@@ -1,5 +1,5 @@
 import { useAccount, useReadContract, useWriteContract, useChainId, useWaitForTransactionReceipt, useSwitchChain, usePublicClient } from 'wagmi'
-import { MARKETPLACE_CONTRACTS, MARKETPLACE_ABI, ITEM_CONTRACTS, ITEM_ABI, USERNAME_REGISTRY_CONTRACTS, USERNAME_REGISTRY_ABI } from '../config/contracts'
+import { MARKETPLACE_CONTRACTS, MARKETPLACE_ABI, ITEM_CONTRACTS, ITEM_ABI, USERNAME_REGISTRY_CONTRACTS, USERNAME_REGISTRY_ABI, isBaseChain, WRONG_CHAIN_ERROR } from '../config/contracts'
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Send, X, Loader2, CheckCircle2, ExternalLink, AlertCircle } from 'lucide-react'
 import { base, baseSepolia } from 'wagmi/chains'
@@ -187,6 +187,11 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
 
   const handleAcceptOffer = (offerId: bigint) => {
     if (!chainId || !address) return
+    
+    if (!isBaseChain(chainId)) {
+      alert(WRONG_CHAIN_ERROR);
+      return;
+    }
 
     try {
       acceptOffer({
@@ -210,6 +215,11 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
 
   const handleCancelOffer = (offerId: bigint) => {
     if (!chainId || !address) return
+    
+    if (!isBaseChain(chainId)) {
+      alert(WRONG_CHAIN_ERROR);
+      return;
+    }
 
     try {
       cancelOffer({

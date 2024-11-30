@@ -1,5 +1,5 @@
 import { useAccount, useReadContract, useWriteContract, useChainId, useWaitForTransactionReceipt } from 'wagmi'
-import { MARKETPLACE_CONTRACTS, MARKETPLACE_ABI, ITEM_CONTRACTS, ITEM_ABI } from '../config/contracts'
+import { MARKETPLACE_CONTRACTS, MARKETPLACE_ABI, ITEM_CONTRACTS, ITEM_ABI, isBaseChain, WRONG_CHAIN_ERROR } from '../config/contracts'
 import { useState, useEffect } from 'react'
 import { Plus, X, Loader2, Search, Wallet, CheckCircle2, ExternalLink } from 'lucide-react'
 import { base } from 'wagmi/chains'
@@ -170,6 +170,12 @@ export function CreateTradeOffer({ onClose }: { onClose: () => void }) {
     // Remove empty items
     const validOfferItems = offerItems.filter(item => item.tokenId && item.amount)
     const validWantItems = wantItems.filter(item => item.tokenId && item.amount)
+
+    // Validate chain
+    if (!isBaseChain(chainId)) {
+      alert(WRONG_CHAIN_ERROR);
+      return;
+    }
 
     // Validate
     if (!validateOffer()) return
