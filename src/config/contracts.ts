@@ -1,4 +1,12 @@
-import { base, baseSepolia } from "wagmi/chains";
+import { base, baseSepolia, Chain } from "wagmi/chains";
+
+// Add validation function
+export function isBaseChain(chainId: number): boolean {
+  return chainId === base.id || chainId === baseSepolia.id;
+}
+
+// Add error message
+export const WRONG_CHAIN_ERROR = "Please switch to Base network to perform this action";
 
 export const ITEM_CONTRACTS = {
   [base.id]: "0xaD574F7f4Eb563B0CcDCcA0D7d7628aeaf071d65", // Base mainnet contract address

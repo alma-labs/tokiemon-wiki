@@ -3,17 +3,25 @@ import { Wallet, Plus, LogOut, X, Coins, Chrome, Copy, Check, ChevronDown, Loade
 import { useState, useEffect, useRef } from "react";
 import { coinbaseWallet, injected } from "wagmi/connectors";
 import { base, baseSepolia } from 'wagmi/chains'
+import { isBaseChain, WRONG_CHAIN_ERROR } from "../config/contracts";
 
 export function Market() {
   const { address, isConnected } = useAccount();
   const { connect, isPending } = useConnect();
   const { disconnect } = useDisconnect();
-  const chainId = useChainId()
-  const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isChainOpen, setIsChainOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check initial chain
+  useEffect(() => {
+    if (chainId && !isBaseChain(chainId)) {
+      alert(WRONG_CHAIN_ERROR);
+    }
+  }, [chainId]);
 
   const chains = [
     { id: base.id, name: 'Base' },
@@ -24,11 +32,19 @@ export function Market() {
 
   // Handle chain changes from MetaMask
   useEffect(() => {
-    const handleChainChanged = (chainId: string) => {
+    const handleChainChanged = async (chainId: string) => {
       const newChainId = parseInt(chainId)
-      if (chains.some(chain => chain.id === newChainId)) {
-        window.location.reload()
+      if (!isBaseChain(newChainId)) {
+        alert(WRONG_CHAIN_ERROR);
+        try {
+          // Try to switch back to Base
+          await switchChain({ chainId: base.id });
+        } catch (error) {
+          console.error("Failed to switch back to Base:", error);
+        }
+        return;
       }
+      window.location.reload();
     }
 
     if (window.ethereum) {
@@ -37,7 +53,7 @@ export function Market() {
         window.ethereum.removeListener('chainChanged', handleChainChanged)
       }
     }
-  }, [])
+  }, [switchChain])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
