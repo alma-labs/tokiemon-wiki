@@ -170,7 +170,10 @@ export function Market() {
               <div className="space-y-4">
                 <button
                   onClick={() => {
-                    connect({ connector: coinbaseWallet({ appName: "Tokiemon" }) });
+                    connect({ 
+                      connector: coinbaseWallet({ appName: "Tokiemon" }),
+                      chainId: base.id 
+                    });
                     setShowModal(false);
                   }}
                   className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 
@@ -182,7 +185,10 @@ export function Market() {
 
                 <button
                   onClick={() => {
-                    connect({ connector: injected() });
+                    connect({ 
+                      connector: injected(),
+                      chainId: base.id 
+                    });
                     setShowModal(false);
                   }}
                   className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 
