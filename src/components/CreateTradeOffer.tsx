@@ -117,6 +117,28 @@ export function CreateTradeOffer({ onClose }: { onClose: () => void }) {
       return errors
     }
 
+    // Check for duplicate items in offer items
+    const offerDuplicates = validOfferItems.filter((item, index) => 
+      validOfferItems.findIndex(i => i.tokenId === item.tokenId) !== index
+    )
+    if (offerDuplicates.length > 0) {
+      const duplicateNames = [...new Set(offerDuplicates.map(item => 
+        itemsInfo[item.tokenId]?.name || `Item #${item.tokenId}`
+      ))]
+      errors.push(`Duplicate items in offer: ${duplicateNames.join(', ')}`)
+    }
+
+    // Check for duplicate items in want items
+    const wantDuplicates = validWantItems.filter((item, index) => 
+      validWantItems.findIndex(i => i.tokenId === item.tokenId) !== index
+    )
+    if (wantDuplicates.length > 0) {
+      const duplicateNames = [...new Set(wantDuplicates.map(item => 
+        itemsInfo[item.tokenId]?.name || `Item #${item.tokenId}`
+      ))]
+      errors.push(`Duplicate items in request: ${duplicateNames.join(', ')}`)
+    }
+
     // Validate each offer item
     validOfferItems.forEach((item) => {
       const ownedItem = ownedItems.find(i => i.id === item.tokenId)

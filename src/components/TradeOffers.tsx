@@ -246,7 +246,7 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
               className="w-5 h-5"
             />
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-medium text-white truncate max-w-[80px] sm:max-w-[120px]">
+              <span className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[180px]">
                 {itemInfo?.name || `Item #${id.toString()}`}
               </span>
               <span className="text-xs text-slate-400">×{amounts[index].toString()}</span>
