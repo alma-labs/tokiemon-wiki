@@ -7,12 +7,14 @@ const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || ''
 export const config = createConfig({
   chains: [base, baseSepolia],
   connectors: [
-    coinbaseWallet({ appName: 'Tokiemon' }),
+    coinbaseWallet({ 
+      appName: 'Tokiemon',
+      headlessMode: true
+    }),
     injected()
   ],
   transports: {
     [base.id]: http(base.rpcUrls.default.http[0]),
     [baseSepolia.id]: http(baseSepolia.rpcUrls.default.http[0]),
-  },
-  syncConnectedChain: true,
+  }
 }) 
