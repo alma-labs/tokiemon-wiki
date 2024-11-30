@@ -66,6 +66,9 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
     abi: MARKETPLACE_ABI,
     functionName: 'getActiveTradeOffers',
     args: [BigInt(page * ITEMS_PER_PAGE), BigInt(ITEMS_PER_PAGE)],
+    query: {
+      enabled: Boolean(chainId),
+    }
   })
 
   // Transaction receipt
@@ -82,9 +85,15 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
 
   // Get total pages
   const totalOffers = tradeOffersData ? Number(tradeOffersData[1]) : 0
-  const totalPages = Math.ceil(totalOffers / ITEMS_PER_PAGE)
   const currentOffers = tradeOffersData?.[0] ?? []
+  const totalPages = Math.ceil(totalOffers / ITEMS_PER_PAGE)
   const hasNextPage = currentOffers.length === ITEMS_PER_PAGE && (page + 1) * ITEMS_PER_PAGE < totalOffers
+
+  useEffect(() => {
+    if (chainId) {
+      refetchOffers()
+    }
+  }, [chainId, page])
 
   // Contract write functions
   const { writeContract: acceptOffer, isPending: isAccepting } = useWriteContract()
@@ -123,7 +132,7 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
     functionName: 'getItemBalances',
     args: [address as `0x${string}`],
     query: {
-      enabled: Boolean(address),
+      enabled: Boolean(address && chainId),
     }
   })
 
@@ -143,13 +152,13 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
       })
       setOwnedItems(items)
     }
-  }, [balanceData, itemsInfo])
+  }, [balanceData, itemsInfo, chainId])
 
   const canAcceptOffer = (offer: any) => {
-    // Check if user has enough of each offered item
-    for (let i = 0; i < offer.offerTokenIds.length; i++) {
-      const tokenId = offer.offerTokenIds[i].toString()
-      const requiredAmount = offer.offerAmounts[i]
+    // Check if user has enough of each wanted item
+    for (let i = 0; i < offer.wantTokenIds.length; i++) {
+      const tokenId = offer.wantTokenIds[i].toString()
+      const requiredAmount = offer.wantAmounts[i]
       const ownedItem = ownedItems.find(item => item.id === tokenId)
       
       if (!ownedItem || ownedItem.balance < requiredAmount) {
@@ -161,9 +170,9 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
 
   const getMissingItems = (offer: any) => {
     const missing: string[] = []
-    for (let i = 0; i < offer.offerTokenIds.length; i++) {
-      const tokenId = offer.offerTokenIds[i].toString()
-      const requiredAmount = offer.offerAmounts[i]
+    for (let i = 0; i < offer.wantTokenIds.length; i++) {
+      const tokenId = offer.wantTokenIds[i].toString()
+      const requiredAmount = offer.wantAmounts[i]
       const ownedItem = ownedItems.find(item => item.id === tokenId)
       const itemName = itemsInfo[tokenId]?.name || `Item #${tokenId}`
       
@@ -177,15 +186,21 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
   }
 
   const handleAcceptOffer = (offerId: bigint) => {
+    if (!chainId || !address) return
+
     try {
       acceptOffer({
         address: MARKETPLACE_CONTRACTS[chainId as keyof typeof MARKETPLACE_CONTRACTS],
         abi: MARKETPLACE_ABI,
         functionName: 'acceptTradeOffer',
         args: [offerId],
+        chainId: chainId,
       }, {
         onSuccess: (hash) => {
           setTxHash(hash)
+        },
+        onError: (error) => {
+          console.error('Transaction failed:', error)
         },
       })
     } catch (error) {
@@ -194,15 +209,21 @@ export function TradeOffers({ setShowCreateOffer }: TradeOffersProps) {
   }
 
   const handleCancelOffer = (offerId: bigint) => {
+    if (!chainId || !address) return
+
     try {
       cancelOffer({
         address: MARKETPLACE_CONTRACTS[chainId as keyof typeof MARKETPLACE_CONTRACTS],
         abi: MARKETPLACE_ABI,
         functionName: 'cancelTradeOffer',
         args: [offerId],
+        chainId: chainId,
       }, {
         onSuccess: (hash) => {
           setTxHash(hash)
+        },
+        onError: (error) => {
+          console.error('Transaction failed:', error)
         },
       })
     } catch (error) {

@@ -2,7 +2,7 @@ import { useAccount, useReadContract, useWriteContract, useChainId, useWaitForTr
 import { MARKETPLACE_CONTRACTS, MARKETPLACE_ABI, ITEM_CONTRACTS, ITEM_ABI } from '../config/contracts'
 import { useState, useEffect } from 'react'
 import { Plus, X, Loader2, Search, Wallet, CheckCircle2, ExternalLink } from 'lucide-react'
-import { base, baseSepolia } from 'wagmi/chains'
+import { base } from 'wagmi/chains'
 
 interface ItemInfo {
   id: string

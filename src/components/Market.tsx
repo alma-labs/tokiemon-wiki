@@ -1,5 +1,5 @@
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from "wagmi";
-import { Wallet, Plus, LogOut, X, Coins, Chrome, Copy, Check, ChevronDown } from "lucide-react";
+import { Wallet, Plus, LogOut, X, Coins, Chrome, Copy, Check, ChevronDown, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { coinbaseWallet, injected } from "wagmi/connectors";
 import { base, baseSepolia } from 'wagmi/chains'
@@ -9,7 +9,7 @@ export function Market() {
   const { connect, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isChainOpen, setIsChainOpen] = useState(false);
@@ -21,6 +21,23 @@ export function Market() {
   ]
 
   const currentChain = chains.find(chain => chain.id === chainId)?.name || 'Select Chain'
+
+  // Handle chain changes from MetaMask
+  useEffect(() => {
+    const handleChainChanged = (chainId: string) => {
+      const newChainId = parseInt(chainId)
+      if (chains.some(chain => chain.id === newChainId)) {
+        window.location.reload()
+      }
+    }
+
+    if (window.ethereum) {
+      window.ethereum.on('chainChanged', handleChainChanged)
+      return () => {
+        window.ethereum.removeListener('chainChanged', handleChainChanged)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,10 +75,21 @@ export function Market() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsChainOpen(!isChainOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors text-sm"
+            disabled={isSwitchingChain}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 text-slate-200 rounded-lg hover:bg-slate-700 
+              transition-colors text-sm disabled:opacity-50"
           >
-            <span>{currentChain}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${isChainOpen ? 'rotate-180' : ''}`} />
+            {isSwitchingChain ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Switching...</span>
+              </>
+            ) : (
+              <>
+                <span>{currentChain}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isChainOpen ? 'rotate-180' : ''}`} />
+              </>
+            )}
           </button>
           
           {isChainOpen && (
@@ -69,13 +97,17 @@ export function Market() {
               {chains.map((chain) => (
                 <button
                   key={chain.id}
-                  onClick={() => {
-                    switchChain?.({ chainId: chain.id })
-                    setIsChainOpen(false)
+                  onClick={async () => {
+                    try {
+                      await switchChain({ chainId: chain.id })
+                      setIsChainOpen(false)
+                    } catch (error) {
+                      console.error('Failed to switch chain:', error)
+                    }
                   }}
-                  className={`w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors ${
-                    chainId === chain.id ? 'text-white bg-slate-700' : 'text-slate-300'
-                  }`}
+                  disabled={isSwitchingChain}
+                  className={`w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors disabled:opacity-50
+                    ${chainId === chain.id ? 'text-white bg-slate-700' : 'text-slate-300'}`}
                 >
                   {chain.name}
                 </button>

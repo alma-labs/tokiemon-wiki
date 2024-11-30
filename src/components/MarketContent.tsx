@@ -1,35 +1,39 @@
-import { useAccount, useChainId, useSwitchChain } from 'wagmi'
-import { base, baseSepolia } from 'wagmi/chains'
-import { ChevronDown, Plus, Wallet } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
-import { Market } from './Market'
-import { TradeOffers } from './TradeOffers'
-import { CreateTradeOffer } from './CreateTradeOffer'
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { base, baseSepolia } from "wagmi/chains";
+import { ChevronDown, Plus, Wallet } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Market } from "./Market";
+import { TradeOffers } from "./TradeOffers";
+import { CreateTradeOffer } from "./CreateTradeOffer";
 
 export function MarketContent() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { switchChain } = useSwitchChain()
-  const [isOpen, setIsOpen] = useState(false)
-  const [showCreateOffer, setShowCreateOffer] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { address } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const [isOpen, setIsOpen] = useState(false);
+  const [showCreateOffer, setShowCreateOffer] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const chains = [
-    { id: base.id, name: 'Base' },
-    { id: baseSepolia.id, name: 'Base Sepolia' }
-  ]
+    { id: base.id, name: "Base" },
+    { id: baseSepolia.id, name: "Base Sepolia" },
+  ];
 
-  const currentChain = chains.find(chain => chain.id === chainId)?.name || 'Select Chain'
+  const currentChain =
+    chains.find((chain) => chain.id === chainId)?.name || "Select Chain";
 
   if (!address) {
     return (
@@ -39,11 +43,13 @@ export function MarketContent() {
             <Wallet className="w-12 h-12 text-slate-600" />
             <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full animate-pulse" />
           </div>
-          <h2 className="text-xl font-medium text-slate-400 mb-6">Connect your wallet to view your items</h2>
+          <h2 className="text-xl font-medium text-slate-400 mb-6">
+            Connect wallet to view offers & items
+          </h2>
           <Market />
         </div>
       </main>
-    )
+    );
   }
 
   return (
@@ -54,5 +60,5 @@ export function MarketContent() {
         <CreateTradeOffer onClose={() => setShowCreateOffer(false)} />
       )}
     </main>
-  )
-} 
+  );
+}
