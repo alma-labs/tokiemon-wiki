@@ -1,8 +1,26 @@
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from "wagmi";
-import { Wallet, Plus, LogOut, X, Coins, Chrome, Copy, Check, ChevronDown, Loader2 } from "lucide-react";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
+import {
+  Wallet,
+  Plus,
+  LogOut,
+  X,
+  Coins,
+  Chrome,
+  Copy,
+  Check,
+  ChevronDown,
+  Loader2,
+  Dog,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { coinbaseWallet, injected } from "wagmi/connectors";
-import { base, baseSepolia } from 'wagmi/chains'
+import { coinbaseWallet, injected, metaMask } from "wagmi/connectors";
+import { base, baseSepolia } from "wagmi/chains";
 import { isBaseChain, WRONG_CHAIN_ERROR } from "../config/contracts";
 
 export function Market() {
@@ -24,16 +42,17 @@ export function Market() {
   }, [chainId]);
 
   const chains = [
-    { id: base.id, name: 'Base' },
-    { id: baseSepolia.id, name: 'Base Sepolia' }
-  ]
+    { id: base.id, name: "Base" },
+    { id: baseSepolia.id, name: "Base Sepolia" },
+  ];
 
-  const currentChain = chains.find(chain => chain.id === chainId)?.name || 'Select Chain'
+  const currentChain =
+    chains.find((chain) => chain.id === chainId)?.name || "Select Chain";
 
   // Handle chain changes from MetaMask
   useEffect(() => {
     const handleChainChanged = async (chainId: string) => {
-      const newChainId = parseInt(chainId)
+      const newChainId = parseInt(chainId);
       if (!isBaseChain(newChainId)) {
         alert(WRONG_CHAIN_ERROR);
         try {
@@ -45,25 +64,28 @@ export function Market() {
         return;
       }
       window.location.reload();
-    }
+    };
 
     if (window.ethereum) {
-      window.ethereum.on('chainChanged', handleChainChanged)
+      window.ethereum.on("chainChanged", handleChainChanged);
       return () => {
-        window.ethereum.removeListener('chainChanged', handleChainChanged)
-      }
+        window.ethereum.removeListener("chainChanged", handleChainChanged);
+      };
     }
-  }, [switchChain])
+  }, [switchChain]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsChainOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsChainOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleCopyAddress = async () => {
     if (address) {
@@ -80,7 +102,9 @@ export function Market() {
           onClick={handleCopyAddress}
           className="flex items-center gap-2 text-sm text-slate-200 hover:text-white transition-colors group"
         >
-          <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+          <span>
+            {address?.slice(0, 6)}...{address?.slice(-4)}
+          </span>
           {copied ? (
             <Check className="w-4 h-4 text-green-400" />
           ) : (
@@ -103,11 +127,15 @@ export function Market() {
             ) : (
               <>
                 <span>{currentChain}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isChainOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${
+                    isChainOpen ? "rotate-180" : ""
+                  }`}
+                />
               </>
             )}
           </button>
-          
+
           {isChainOpen && (
             <div className="absolute right-0 mt-1 w-48 bg-slate-800 rounded-lg shadow-lg py-1 z-10">
               {chains.map((chain) => (
@@ -115,15 +143,19 @@ export function Market() {
                   key={chain.id}
                   onClick={async () => {
                     try {
-                      await switchChain({ chainId: chain.id })
-                      setIsChainOpen(false)
+                      await switchChain({ chainId: chain.id });
+                      setIsChainOpen(false);
                     } catch (error) {
-                      console.error('Failed to switch chain:', error)
+                      console.error("Failed to switch chain:", error);
                     }
                   }}
                   disabled={isSwitchingChain}
                   className={`w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors disabled:opacity-50
-                    ${chainId === chain.id ? 'text-white bg-slate-700' : 'text-slate-300'}`}
+                    ${
+                      chainId === chain.id
+                        ? "text-white bg-slate-700"
+                        : "text-slate-300"
+                    }`}
                 >
                   {chain.name}
                 </button>
@@ -149,7 +181,10 @@ export function Market() {
       <div className="flex gap-2">
         <button
           onClick={() => {
-            connect({ connector: coinbaseWallet({ appName: "Tokiemon" }), chainId: 8453 });
+            connect({
+              connector: coinbaseWallet({ appName: "Tokiemon" }),
+              chainId: 8453,
+            });
           }}
           disabled={isPending}
           className="flex items-center justify-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 
@@ -186,9 +221,24 @@ export function Market() {
               <div className="space-y-4">
                 <button
                   onClick={() => {
-                    connect({ 
+                    connect({
+                      connector: metaMask(),
+                      chainId: base.id,
+                    });
+                    setShowModal(false);
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-700 hover:bg-slate-600 
+                    rounded-lg transition-colors"
+                >
+                  <span className="font-medium">MetaMask</span>
+                  <Dog className="w-6 h-6 text-orange-400" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    connect({
                       connector: coinbaseWallet({ appName: "Tokiemon" }),
-                      chainId: base.id 
+                      chainId: base.id,
                     });
                     setShowModal(false);
                   }}
@@ -201,9 +251,9 @@ export function Market() {
 
                 <button
                   onClick={() => {
-                    connect({ 
+                    connect({
                       connector: injected(),
-                      chainId: base.id 
+                      chainId: base.id,
                     });
                     setShowModal(false);
                   }}
