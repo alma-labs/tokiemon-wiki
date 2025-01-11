@@ -1,48 +1,47 @@
-import { useState } from 'react'
-import { X, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react'
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
-import { ITEM_CONTRACTS, ITEM_ABI } from '../config/contracts'
-import { base, baseSepolia } from 'wagmi/chains'
+import { useState } from "react";
+import { X, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { ITEM_CONTRACTS } from "../config/contracts";
+import { ITEM_ABI } from "../config/abis";
+import { base, baseSepolia } from "wagmi/chains";
 
 interface TransferModalProps {
-  itemId: bigint
-  balance: bigint
-  onClose: () => void
-  chainId: number
+  itemId: bigint;
+  balance: bigint;
+  onClose: () => void;
+  chainId: number;
 }
 
 export function TransferModal({ itemId, balance, onClose, chainId }: TransferModalProps) {
-  const [recipient, setRecipient] = useState('')
-  const [amount, setAmount] = useState('1')
-  const { address } = useAccount()
-  
-  const { writeContract, isPending: isWritePending, data: hash } = useWriteContract()
-  
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("1");
+  const { address } = useAccount();
+
+  const { writeContract, isPending: isWritePending, data: hash } = useWriteContract();
+
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
-  })
+  });
 
   const handleTransfer = async () => {
-    if (!address) return
+    if (!address) return;
 
     try {
       writeContract({
         address: ITEM_CONTRACTS[chainId as keyof typeof ITEM_CONTRACTS],
         abi: ITEM_ABI,
-        functionName: 'safeTransferFrom',
-        args: [address, recipient as `0x${string}`, itemId, BigInt(amount), '0x' as `0x${string}`],
-      })
+        functionName: "safeTransferFrom",
+        args: [address, recipient as `0x${string}`, itemId, BigInt(amount), "0x" as `0x${string}`],
+      });
     } catch (error) {
-      console.error('Transfer failed:', error)
+      console.error("Transfer failed:", error);
     }
-  }
+  };
 
   const getExplorerLink = (hash: `0x${string}`) => {
-    const baseUrl = chainId === base.id 
-      ? 'https://basescan.org'
-      : 'https://sepolia.basescan.org'
-    return `${baseUrl}/tx/${hash}`
-  }
+    const baseUrl = chainId === base.id ? "https://basescan.org" : "https://sepolia.basescan.org";
+    return `${baseUrl}/tx/${hash}`;
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
@@ -51,10 +50,7 @@ export function TransferModal({ itemId, balance, onClose, chainId }: TransferMod
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Transfer Item #{itemId.toString()}</h2>
             {!hash && (
-              <button
-                onClick={onClose}
-                className="p-1 hover:bg-slate-700 rounded-full transition-colors"
-              >
+              <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full transition-colors">
                 <X className="w-6 h-6" />
               </button>
             )}
@@ -85,7 +81,7 @@ export function TransferModal({ itemId, balance, onClose, chainId }: TransferMod
             <div className="text-center py-8">
               <Loader2 className="w-12 h-12 text-[#1da1f2] mx-auto mb-4 animate-spin" />
               <h3 className="text-lg font-medium text-white mb-2">
-                {isWritePending ? 'Confirm in Wallet' : 'Transaction Pending'}
+                {isWritePending ? "Confirm in Wallet" : "Transaction Pending"}
               </h3>
               {hash && (
                 <a
@@ -102,9 +98,7 @@ export function TransferModal({ itemId, balance, onClose, chainId }: TransferMod
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Recipient Address
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Recipient Address</label>
                 <input
                   type="text"
                   value={recipient}
@@ -147,5 +141,5 @@ export function TransferModal({ itemId, balance, onClose, chainId }: TransferMod
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

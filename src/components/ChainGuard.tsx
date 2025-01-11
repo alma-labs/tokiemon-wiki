@@ -28,7 +28,7 @@ export function ChainGuard({ children }: { children: React.ReactNode }) {
       }
     };
 
-    handleChainSwitch();
+    //handleChainSwitch();
   }, [isConnected, chainId, config]);
 
   if (isConnected && chainId !== base.id) {

@@ -1,26 +1,19 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, Sword, Ghost, Wallet } from "lucide-react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { ExternalLink, Sword, Ghost, Wallet, Skull } from "lucide-react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Market } from "./components/Market";
 import ItemsSection from "./components/ItemsSection";
 import MonstersSection from "./components/MonstersSection";
 import { Item, Community } from "./types";
 import { MarketContent } from "./components/MarketContent";
-import { ChainGuard } from './components/ChainGuard'
+import { ChainGuard } from "./components/ChainGuard";
+import { BlackMarketContent } from "./components/BlackMarketContent";
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeSection, setActiveSection] = useState<
-    "items" | "monsters" | "market"
-  >("items");
+  const [activeSection, setActiveSection] = useState<"items" | "monsters" | "market" | "black-market">("items");
   const [items, setItems] = useState<Item[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -29,7 +22,7 @@ export default function App() {
 
   useEffect(() => {
     const path = location.pathname.slice(1) || "items";
-    setActiveSection(path as "items" | "monsters" | "market");
+    setActiveSection(path as "items" | "monsters" | "market" | "black-market");
   }, [location]);
 
   useEffect(() => {
@@ -50,9 +43,7 @@ export default function App() {
     const fetchCommunities = async () => {
       if (location.pathname === "/monsters" || activeSection === "monsters") {
         try {
-          const response = await fetch(
-            "https://api.tokiemon.io/leaderboards/communities"
-          );
+          const response = await fetch("https://api.tokiemon.io/leaderboards/communities");
           if (!response.ok) throw new Error("Failed to fetch communities");
           const data = await response.json();
           setCommunities(data.communities);
@@ -66,7 +57,7 @@ export default function App() {
     fetchCommunities();
   }, [location.pathname, activeSection]);
 
-  const handleNavigation = (section: "items" | "monsters" | "market") => {
+  const handleNavigation = (section: "items" | "monsters" | "market" | "black-market") => {
     setActiveSection(section);
     navigate(`/${section}`);
   };
@@ -86,11 +77,9 @@ export default function App() {
                   />
                   Tokiemon Wiki & Market
                 </h1>
-                <p className="text-[#94a3b8] mt-1">
-                  Discover Tokiemon Monsters & Items of Degenia
-                </p>
+                <p className="text-[#94a3b8] mt-1">Discover Tokiemon Monsters & Items of Degenia</p>
               </div>
-              {activeSection === "market" ? (
+              {activeSection === "market" || activeSection === "black-market" ? (
                 <Market />
               ) : (
                 <div className="mt-4 md:mt-0 flex gap-2">
@@ -155,6 +144,20 @@ export default function App() {
                   beta
                 </span>
               </button>
+              <button
+                onClick={() => handleNavigation("black-market")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  activeSection === "black-market"
+                    ? "bg-slate-700 text-white"
+                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                }`}
+              >
+                <Skull className="w-4 h-4" />
+                <span>Black Market</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-red-500 text-white rounded-full font-medium leading-none">
+                  alpha
+                </span>
+              </button>
             </nav>
           </div>
         </header>
@@ -183,11 +186,9 @@ export default function App() {
                     />
                   }
                 />
-                <Route
-                  path="/monsters"
-                  element={<MonstersSection communities={communities} />}
-                />
+                <Route path="/monsters" element={<MonstersSection communities={communities} />} />
                 <Route path="/market" element={<MarketContent />} />
+                <Route path="/black-market" element={<BlackMarketContent />} />
                 <Route path="/" element={<Navigate to="/items" replace />} />
               </Routes>
             </motion.div>
