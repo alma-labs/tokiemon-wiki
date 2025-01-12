@@ -7,6 +7,7 @@ import { CreateListingModal } from "./CreateListingModal";
 import { CreateCounterOfferModal } from "./CreateCounterOfferModal";
 import { ListingDetailsModal } from "./ListingDetailsModal";
 import { useUsername, useUsernames } from "../hooks/useUsername";
+import { WalletConnect } from "./WalletConnect";
 
 export interface CounterOffer {
   offerId: bigint;
@@ -62,7 +63,7 @@ export function BlackMarketContent() {
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
     abi: BLACK_MARKET_ABI,
     functionName: "getActiveListings",
-  });
+  }) as { data: bigint[] | undefined, refetch: () => void };
 
   const { data: listingsWithOffers, refetch: refetchListingsWithOffers } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
@@ -72,7 +73,7 @@ export function BlackMarketContent() {
     query: {
       enabled: Boolean(activeListings?.length),
     },
-  });
+  }) as { data: Listing[] | undefined, refetch: () => void };
 
   const ownerUsernames = useUsernames(
     listingsWithOffers && Array.isArray(listingsWithOffers) ? listingsWithOffers.map((listing) => listing.owner) : []
@@ -88,39 +89,24 @@ export function BlackMarketContent() {
   useEffect(() => {
     if (isSuccess) {
       const refetchData = async () => {
-        const { refetch: refetchActive } = useReadContract({
-          address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
-          abi: BLACK_MARKET_ABI,
-          functionName: "getActiveListings",
-        });
-
-        const { refetch: refetchWithOffers } = useReadContract({
-          address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
-          abi: BLACK_MARKET_ABI,
-          functionName: "getBulkListingsWithOffers",
-          args: activeListings ? [activeListings] : undefined,
-          query: {
-            enabled: Boolean(activeListings?.length),
-          },
-        });
-
-        await refetchActive();
-        await refetchWithOffers();
+        await refetchActiveListings();
+        await refetchListingsWithOffers();
       };
 
       refetchData();
     }
-  }, [isSuccess, chainId, activeListings]);
+  }, [isSuccess, chainId, activeListings, refetchActiveListings, refetchListingsWithOffers]);
 
   const handleCancelListing = async (listingId: bigint) => {
     console.log("Cancelling listing:", listingId.toString());
     try {
-      writeContract({
+      const hash = await writeContract({
         address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
         abi: BLACK_MARKET_ABI,
         functionName: "cancelListing",
         args: [listingId],
       });
+      setTxHash(hash);
     } catch (error) {
       console.error("Failed to cancel listing:", error);
     }
@@ -138,12 +124,13 @@ export function BlackMarketContent() {
     });
 
     try {
-      writeContract({
+      const hash = await writeContract({
         address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
         abi: BLACK_MARKET_ABI,
         functionName: "acceptCounterOffer",
         args: [listingId, counterOfferId],
       });
+      setTxHash(hash);
     } catch (error) {
       console.error("Failed to accept counter offer:", error);
     }
@@ -152,12 +139,13 @@ export function BlackMarketContent() {
   const handleCancelOffer = async (counterOfferId: bigint) => {
     console.log("Cancelling offer:", counterOfferId.toString());
     try {
-      writeContract({
+      const hash = await writeContract({
         address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
         abi: BLACK_MARKET_ABI,
         functionName: "cancelCounterOffer",
         args: [counterOfferId],
       });
+      setTxHash(hash);
     } catch (error) {
       console.error("Failed to cancel offer:", error);
     }
@@ -183,7 +171,7 @@ export function BlackMarketContent() {
       if (!listingsWithOffers) return;
 
       const tokiemonIds = new Set<string>();
-      listingsWithOffers.forEach((listing) => {
+      listingsWithOffers.forEach((listing: Listing) => {
         listing.tokiemonIds.forEach((id) => tokiemonIds.add(id.toString()));
         listing.counterOffers.forEach((offer) => {
           offer.tokiemonIds.forEach((id) => tokiemonIds.add(id.toString()));
@@ -214,9 +202,9 @@ export function BlackMarketContent() {
     refetchListingsWithOffers?.();
   };
 
-  const sortedListings = listingsWithOffers
+  const sortedListings = listingsWithOffers && activeListings
     ? [...Array(listingsWithOffers.length).keys()]
-        .map((i) => ({ listing: listingsWithOffers[i], id: activeListings![i] }))
+        .map((i) => ({ listing: listingsWithOffers[i], id: activeListings[i] }))
         .sort((a, b) => Number(b.id - a.id))
         .filter(({ listing }) => {
           if (activeTab === "open") {
@@ -241,6 +229,7 @@ export function BlackMarketContent() {
             <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full animate-pulse" />
           </div>
           <h2 className="text-xl font-medium text-slate-400 mb-6">Connect wallet to access the black market</h2>
+          <WalletConnect />
         </div>
       </main>
     );
@@ -248,7 +237,7 @@ export function BlackMarketContent() {
 
   const selectedListing =
     selectedListingForDetails && listingsWithOffers && activeListings
-      ? listingsWithOffers[activeListings.indexOf(selectedListingForDetails)]
+      ? listingsWithOffers[activeListings.findIndex(id => id === selectedListingForDetails)]
       : null;
 
   return (
