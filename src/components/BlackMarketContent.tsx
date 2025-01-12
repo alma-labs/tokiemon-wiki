@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useAccount, useReadContract, useChainId, useWriteContract } from "wagmi";
+import { useState, useEffect, useCallback } from "react";
+import { useAccount, useReadContract, useChainId, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Wallet, Plus, ChevronRight } from "lucide-react";
 import { BLACK_MARKET_CONTRACTS } from "../config/contracts";
 import { BLACK_MARKET_ABI } from "../config/abis";
@@ -55,14 +55,15 @@ export function BlackMarketContent() {
   const [selectedListingForDetails, setSelectedListingForDetails] = useState<bigint | null>(null);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [tokiemonInfo, setTokiemonInfo] = useState<Record<string, TokiemonInfo>>({});
+  const [activeTab, setActiveTab] = useState<'all' | 'your-listings'>('all');
 
-  const { data: activeListings } = useReadContract({
+  const { data: activeListings, refetch: refetchActiveListings } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
     abi: BLACK_MARKET_ABI,
     functionName: "getActiveListings",
-  }) as { data: bigint[] | undefined };
+  });
 
-  const { data: listingsWithOffers } = useReadContract({
+  const { data: listingsWithOffers, refetch: refetchListingsWithOffers } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
     abi: BLACK_MARKET_ABI,
     functionName: "getBulkListingsWithOffers",
@@ -70,9 +71,41 @@ export function BlackMarketContent() {
     query: {
       enabled: Boolean(activeListings?.length),
     },
-  }) as { data: Listing[] | undefined };
+  });
 
   const { writeContract } = useWriteContract();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+
+  const { isSuccess } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  useEffect(() => {
+    if (isSuccess) {
+      const refetchData = async () => {
+        const { refetch: refetchActive } = useReadContract({
+          address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
+          abi: BLACK_MARKET_ABI,
+          functionName: "getActiveListings",
+        });
+
+        const { refetch: refetchWithOffers } = useReadContract({
+          address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
+          abi: BLACK_MARKET_ABI,
+          functionName: "getBulkListingsWithOffers",
+          args: activeListings ? [activeListings] : undefined,
+          query: {
+            enabled: Boolean(activeListings?.length),
+          },
+        });
+
+        await refetchActive();
+        await refetchWithOffers();
+      };
+
+      refetchData();
+    }
+  }, [isSuccess, chainId, activeListings]);
 
   const handleCancelListing = async (listingId: bigint) => {
     console.log("Cancelling listing:", listingId.toString());
@@ -169,6 +202,18 @@ export function BlackMarketContent() {
     fetchTokiemonMetadata();
   }, [listingsWithOffers, chainId]);
 
+  const refetchListings = () => {
+    refetchActiveListings?.();
+    refetchListingsWithOffers?.();
+  };
+
+  const sortedListings = listingsWithOffers 
+    ? [...Array(listingsWithOffers.length).keys()]
+      .map(i => ({ listing: listingsWithOffers[i], id: activeListings![i] }))
+      .sort((a, b) => Number(b.id - a.id))
+      .filter(({ listing }) => activeTab === 'all' || listing.owner.toLowerCase() === address?.toLowerCase())
+    : [];
+
   if (!address) {
     return (
       <main className="max-w-7xl mx-auto px-4 py-6">
@@ -190,10 +235,32 @@ export function BlackMarketContent() {
   return (
     <main className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Active Listings</h2>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-2xl font-bold text-white">Active Listings</h2>
+          <div className="flex gap-4 text-sm">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`transition-colors duration-200 
+                ${activeTab === 'all' 
+                  ? 'text-white font-medium' 
+                  : 'text-slate-400 hover:text-slate-300'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setActiveTab('your-listings')}
+              className={`transition-colors duration-200 
+                ${activeTab === 'your-listings' 
+                  ? 'text-white font-medium' 
+                  : 'text-slate-400 hover:text-slate-300'}`}
+            >
+              Your Listings
+            </button>
+          </div>
+        </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 
             text-white rounded-lg transition-colors duration-200 font-medium"
         >
           <Plus className="w-4 h-4" />
@@ -202,31 +269,41 @@ export function BlackMarketContent() {
       </div>
 
       <div className="bg-slate-800 rounded-lg overflow-hidden">
-        {activeListings?.length === 0 ? (
-          <div className="text-slate-400 text-center py-12">No active listings found</div>
+        {sortedListings.length === 0 ? (
+          <div className="text-slate-400 text-center py-12">
+            {activeTab === 'your-listings' 
+              ? "You don't have any active listings" 
+              : "No active listings found"}
+          </div>
         ) : (
           <div className="divide-y divide-slate-700">
-            {listingsWithOffers?.map((listing, index) => {
-              const listingId = activeListings![index];
+            {sortedListings.map(({ listing, id }) => {
               const activeOffers = listing.counterOffers.filter(offer => offer.isActive);
               return (
                 <div
-                  key={listingId.toString()}
-                  onClick={() => setSelectedListingForDetails(listingId)}
+                  key={id.toString()}
+                  onClick={() => setSelectedListingForDetails(id)}
                   className="p-4 hover:bg-slate-700/50 transition-colors cursor-pointer"
                 >
-                  <div className="flex items-center gap-6">
-                    <div className="w-64">
-                      <div className="flex items-center gap-2">
-                        <div className="text-lg font-medium text-white">{listing.name}</div>
-                        <div className="text-sm text-slate-400">#{listingId.toString()}</div>
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-lg font-medium text-white">{listing.name}</div>
+                          <div className="text-sm text-slate-400">#{id.toString()}</div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-slate-400">
+                          <div>Owner: {listing.owner.slice(0, 6)}...{listing.owner.slice(-4)}</div>
+                          <div className="flex items-center gap-1">
+                            <span>Offers:</span>
+                            <span className="text-white">{activeOffers.length}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-400">
-                        Owner: {listing.owner.slice(0, 6)}...{listing.owner.slice(-4)}
-                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400" />
                     </div>
                       
-                    <div className="flex-1 flex items-center gap-6">
+                    <div className="flex flex-wrap items-center gap-3">
                       {listing.usdcAmount > 0n && (
                         <div className="relative group">
                           <div className="relative">
@@ -243,7 +320,7 @@ export function BlackMarketContent() {
                       )}
 
                       {listing.tokiemonIds.length > 0 && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           {listing.tokiemonIds.map((id) => {
                             const tokiemon = tokiemonInfo[id.toString()];
                             return (
@@ -278,7 +355,7 @@ export function BlackMarketContent() {
                       )}
 
                       {listing.itemIds.length > 0 && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           {listing.itemIds.map((id, i) => {
                             const item = itemsInfo[id.toString()];
                             return (
@@ -304,15 +381,6 @@ export function BlackMarketContent() {
                         </div>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div className="text-sm text-slate-400">Offers</div>
-                        <div className="text-white">{activeOffers.length}</div>
-                      </div>
-                    </div>
-
-                    <ChevronRight className="w-5 h-5 text-slate-400" />
                   </div>
                 </div>
               );
@@ -328,6 +396,7 @@ export function BlackMarketContent() {
           listingId={BigInt(selectedListingId)}
           listingName={listingsWithOffers[activeListings.findIndex(id => id === BigInt(selectedListingId))].name}
           onClose={() => setSelectedListingId(null)}
+          refetchOffers={() => refetchListings()}
         />
       )}
 

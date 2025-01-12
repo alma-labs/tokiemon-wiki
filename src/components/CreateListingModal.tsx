@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useWriteContract, useChainId, useReadContract, useAccount } from "wagmi";
-import { X, Plus, ChevronDown } from "lucide-react";
+import { useWriteContract, useChainId, useReadContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { X, Plus, ChevronDown, Loader2 } from "lucide-react";
 import { BLACK_MARKET_CONTRACTS, TOKIEMON_NFT_CONTRACTS, USDC_CONTRACTS, LENS_CONTRACTS } from "../config/contracts";
 import { BLACK_MARKET_ABI, TOKIEMON_NFT_ABI, ERC20_ABI, LENS_ABI } from "../config/abis";
 import { useTokenPermissions } from "../hooks/useTokenPermissions";
 import { useUserAssets } from "../hooks/useUserAssets";
+import { formatUnits } from "viem";
 
 interface CreateListingModalProps {
   onClose: () => void;
@@ -28,10 +29,21 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   const [showTokiemonDropdown, setShowTokiemonDropdown] = useState(false);
   const [showItemsDropdown, setShowItemsDropdown] = useState(false);
   const [ownedTokiemon, setOwnedTokiemon] = useState<TokiemonInfo[]>([]);
-  const [tokiemonSearch, setTokiemonSearch] = useState("");
-  const [itemSearch, setItemSearch] = useState("");
+  const [formError, setFormError] = useState<string>("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hash } = useWriteContract();
+  const { isLoading: isWaitingForTx, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  // Handle transaction success
+  useEffect(() => {
+    if (isSuccess) {
+      window.location.reload();
+    }
+  }, [isSuccess]);
+
   const chainId = useChainId();
   const { address } = useAccount();
   const { isNFTApproved, hasUSDCAllowance } = useTokenPermissions(
@@ -40,6 +52,16 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   const { ownedItems } = useUserAssets();
   const { writeContract: approveNFT } = useWriteContract();
   const { writeContract: approveUSDC } = useWriteContract();
+
+  // Get USDC balance
+  const { data: usdcBalance = 0n } = useReadContract({
+    address: USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS],
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : [0n],
+  });
+
+  const formattedUsdcBalance = usdcBalance ? formatUnits(usdcBalance, 6) : "0";
 
   // Get owned Tokiemon IDs from lens contract
   const { data: userTokiemonResult } = useReadContract({
@@ -80,7 +102,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
         console.log("Raw API Response:", metadata);
         
         // Match the API response with lens token IDs
-        const matchedTokiemon = metadata.filter(apiTokiemon => 
+        const matchedTokiemon = metadata.filter((apiTokiemon: TokiemonInfo) => 
           userTokiemonResult.some(lensTokiemon => 
             lensTokiemon.tokenId.toString() === apiTokiemon.tokenId
           )
@@ -128,9 +150,37 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   };
 
   const handleCreateListing = async () => {
-    const usdcAmountBigInt = usdcAmount ? BigInt(Math.floor(parseFloat(usdcAmount) * 1e6)) : 0n;
-    
+    // Reset form error
+    setFormError("");
+    setIsCreating(true);
+
     try {
+      // Validation checks...
+      if (!name.trim()) {
+        setFormError("Please enter a listing name");
+        setIsCreating(false);
+        return;
+      }
+
+      if (selectedTokiemon.length === 0 && selectedItems.length === 0) {
+        setFormError("Please select at least one Tokiemon or item");
+        setIsCreating(false);
+        return;
+      }
+
+      if (usdcAmount) {
+        const usdcAmountFloat = parseFloat(usdcAmount);
+        const usdcBalanceFloat = parseFloat(formattedUsdcBalance);
+        
+        if (usdcAmountFloat > usdcBalanceFloat) {
+          setFormError(`Insufficient USDC balance. You have ${formattedUsdcBalance} USDC`);
+          setIsCreating(false);
+          return;
+        }
+      }
+
+      const usdcAmountBigInt = usdcAmount ? BigInt(Math.floor(parseFloat(usdcAmount) * 1e6)) : 0n;
+      
       writeContract({
         address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
         abi: BLACK_MARKET_ABI,
@@ -143,9 +193,10 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
           usdcAmountBigInt
         ],
       });
-      onClose();
     } catch (error) {
       console.error("Failed to create listing:", error);
+      setFormError("Failed to create listing. Please try again.");
+      setIsCreating(false);
     }
   };
 
@@ -177,245 +228,240 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Create Black Market Listing</h2>
-            <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full transition-colors">
-              <X className="w-6 h-6 text-slate-400" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Listing Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My Awesome Listing"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
-                  focus:ring-2 focus:ring-red-500 focus:border-transparent 
-                  text-white placeholder-gray-400"
-              />
+        <div className="max-h-[600px] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Create Black Market Listing</h2>
+              <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Tokiemon</label>
-              {!isNFTApproved ? (
-                <button
-                  onClick={handleApproveNFT}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                    text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
-                >
-                  Approve Tokiemon Usage
-                </button>
-              ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My Awesome Listing"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
+                    focus:ring-2 focus:ring-red-500 focus:border-transparent 
+                    text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Tokiemon</label>
+                {!isNFTApproved ? (
+                  <button
+                    onClick={handleApproveNFT}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                  >
+                    Approve Tokiemon Usage
+                  </button>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowTokiemonDropdown(!showTokiemonDropdown)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-slate-700 border border-slate-600 
+                        rounded-lg text-white hover:bg-slate-600 transition-colors"
+                    >
+                      <span>{selectedTokiemon.length ? `${selectedTokiemon.length} selected` : "Select Tokiemon"}</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    
+                    {showTokiemonDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
+                        shadow-lg max-h-60 overflow-auto">
+                        {ownedTokiemon.map((tokiemon) => (
+                          <div
+                            key={tokiemon.tokenId}
+                            onClick={() => toggleTokiemon(tokiemon.tokenId)}
+                            className="flex items-center gap-3 p-2 hover:bg-slate-600 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedTokiemon.includes(tokiemon.tokenId)}
+                              readOnly
+                              className="rounded border-slate-500"
+                            />
+                            <img
+                              src={tokiemon.image}
+                              alt={tokiemon.name}
+                              className="w-8 h-8 rounded"
+                            />
+                            <div className="flex-grow">
+                              <div className="flex items-center gap-2">
+                                <span className="text-white text-sm">{tokiemon.name}</span>
+                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}</span>
+                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}</span>
+                                <span className={`text-xs ${
+                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare' ? 'text-yellow-500' :
+                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon' ? 'text-blue-500' :
+                                  'text-slate-400'
+                                }`}>
+                                  {tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {selectedTokiemon.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedTokiemon.map((id) => {
+                      const tokiemon = ownedTokiemon.find(t => t.tokenId === id);
+                      return (
+                        <div key={id} className="flex items-center gap-2 bg-slate-700 rounded-lg p-2">
+                          <img
+                            src={tokiemon?.image}
+                            alt={tokiemon?.name}
+                            className="w-6 h-6 rounded"
+                          />
+                          <span className="text-white text-sm">{tokiemon?.name}</span>
+                          <button
+                            onClick={() => toggleTokiemon(id)}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Items</label>
                 <div className="relative">
                   <button
-                    onClick={() => setShowTokiemonDropdown(!showTokiemonDropdown)}
+                    onClick={() => setShowItemsDropdown(!showItemsDropdown)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-slate-700 border border-slate-600 
                       rounded-lg text-white hover:bg-slate-600 transition-colors"
                   >
-                    <span>{selectedTokiemon.length ? `${selectedTokiemon.length} selected` : "Select Tokiemon"}</span>
+                    <span>{selectedItems.length ? `${selectedItems.length} selected` : "Select Items"}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   
-                  {showTokiemonDropdown && (
+                  {showItemsDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
                       shadow-lg max-h-60 overflow-auto">
-                      <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
-                        <input
-                          type="text"
-                          value={tokiemonSearch}
-                          onChange={(e) => setTokiemonSearch(e.target.value)}
-                          placeholder="Search Tokiemon..."
-                          className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-                        />
-                      </div>
-                      {ownedTokiemon
-                        .filter(tokiemon => 
-                          tokiemon.name.toLowerCase().includes(tokiemonSearch.toLowerCase())
-                        )
-                        .map((tokiemon) => (
+                      {ownedItems.map((item) => (
                         <div
-                          key={tokiemon.tokenId}
-                          onClick={() => toggleTokiemon(tokiemon.tokenId)}
+                          key={item.id}
+                          onClick={() => toggleItem(item.id)}
                           className="flex items-center gap-3 p-2 hover:bg-slate-600 cursor-pointer"
                         >
                           <input
                             type="checkbox"
-                            checked={selectedTokiemon.includes(tokiemon.tokenId)}
+                            checked={selectedItems.some(i => i.id === item.id)}
                             readOnly
                             className="rounded border-slate-500"
                           />
                           <img
-                            src={tokiemon.image}
-                            alt={tokiemon.name}
+                            src={item.image}
+                            alt={item.name}
                             className="w-8 h-8 rounded"
                           />
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white text-sm">{tokiemon.name}</span>
-                              <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}</span>
-                              <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}</span>
-                              <span className={`text-xs ${
-                                tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare' ? 'text-yellow-500' :
-                                tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon' ? 'text-blue-500' :
-                                'text-slate-400'
-                              }`}>
-                                {tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value}
-                              </span>
-                            </div>
+                          <div>
+                            <div className="text-white text-sm">{item.name}</div>
+                            <div className="text-slate-400 text-xs">Balance: {item.balance.toString()}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-              )}
-              {selectedTokiemon.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedTokiemon.map((id) => {
-                    const tokiemon = ownedTokiemon.find(t => t.tokenId === id);
-                    return (
-                      <div key={id} className="flex items-center gap-2 bg-slate-700 rounded-lg p-2">
-                        <img
-                          src={tokiemon?.image}
-                          alt={tokiemon?.name}
-                          className="w-6 h-6 rounded"
-                        />
-                        <span className="text-white text-sm">{tokiemon?.name}</span>
-                        <button
-                          onClick={() => toggleTokiemon(id)}
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Items</label>
-              <div className="relative">
-                <button
-                  onClick={() => setShowItemsDropdown(!showItemsDropdown)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-slate-700 border border-slate-600 
-                    rounded-lg text-white hover:bg-slate-600 transition-colors"
-                >
-                  <span>{selectedItems.length ? `${selectedItems.length} selected` : "Select Items"}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                
-                {showItemsDropdown && (
-                  <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
-                    shadow-lg max-h-60 overflow-auto">
-                    <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
-                      <input
-                        type="text"
-                        value={itemSearch}
-                        onChange={(e) => setItemSearch(e.target.value)}
-                        placeholder="Search Items..."
-                        className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-                      />
-                    </div>
-                    {ownedItems
-                      .filter(item => 
-                        item.name.toLowerCase().includes(itemSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => toggleItem(item.id)}
-                        className="flex items-center gap-3 p-2 hover:bg-slate-600 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.some(i => i.id === item.id)}
-                          readOnly
-                          className="rounded border-slate-500"
-                        />
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-8 h-8 rounded"
-                        />
-                        <div>
-                          <div className="text-white text-sm">{item.name}</div>
-                          <div className="text-slate-400 text-xs">Balance: {item.balance.toString()}</div>
+                {selectedItems.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {selectedItems.map(({ id, amount }) => {
+                      const item = ownedItems.find(i => i.id === id);
+                      return (
+                        <div key={id} className="flex items-center gap-2 bg-slate-700 rounded-lg p-2">
+                          <img
+                            src={item?.image}
+                            alt={item?.name}
+                            className="w-6 h-6 rounded"
+                          />
+                          <span className="text-white text-sm flex-grow">{item?.name}</span>
+                          <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => updateItemAmount(id, e.target.value)}
+                            min="1"
+                            max={item?.balance.toString()}
+                            className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                          />
+                          <button
+                            onClick={() => toggleItem(id)}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
-              {selectedItems.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {selectedItems.map(({ id, amount }) => {
-                    const item = ownedItems.find(i => i.id === id);
-                    return (
-                      <div key={id} className="flex items-center gap-2 bg-slate-700 rounded-lg p-2">
-                        <img
-                          src={item?.image}
-                          alt={item?.name}
-                          className="w-6 h-6 rounded"
-                        />
-                        <span className="text-white text-sm flex-grow">{item?.name}</span>
-                        <input
-                          type="number"
-                          value={amount}
-                          onChange={(e) => updateItemAmount(id, e.target.value)}
-                          min="1"
-                          max={item?.balance.toString()}
-                          className="w-20 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
-                        />
-                        <button
-                          onClick={() => toggleItem(id)}
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">USDC Amount</label>
-              {!hasUSDCAllowance ? (
-                <button
-                  onClick={handleApproveUSDC}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                    text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
-                >
-                  Approve USDC Usage
-                </button>
-              ) : (
-                <input
-                  type="number"
-                  value={usdcAmount}
-                  onChange={(e) => setUsdcAmount(e.target.value)}
-                  placeholder="100"
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
-                    focus:ring-2 focus:ring-red-500 focus:border-transparent 
-                    text-white placeholder-gray-400"
-                />
-              )}
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">USDC Amount</label>
+                {!hasUSDCAllowance ? (
+                  <button
+                    onClick={handleApproveUSDC}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                  >
+                    Approve USDC Usage
+                  </button>
+                ) : (
+                  <div className="space-y-1">
+                    <input
+                      type="number"
+                      value={usdcAmount}
+                      onChange={(e) => setUsdcAmount(e.target.value)}
+                      placeholder="100"
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
+                        focus:ring-2 focus:ring-red-500 focus:border-transparent 
+                        text-white placeholder-gray-400"
+                    />
+                    <div className="text-sm text-slate-400">
+                      Balance: {formattedUsdcBalance} USDC
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <button
-              onClick={handleCreateListing}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 
-                text-white rounded-lg transition-colors duration-200 font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Create Listing
-            </button>
+              {formError && (
+                <div className="text-red-500 text-sm">{formError}</div>
+              )}
+
+              <button
+                onClick={handleCreateListing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 
+                  text-white rounded-lg transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!name.trim() || (selectedTokiemon.length === 0 && selectedItems.length === 0) || isCreating || isWaitingForTx}
+              >
+                {(isCreating || isWaitingForTx) ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isWaitingForTx ? "Confirming..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Create Listing
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
