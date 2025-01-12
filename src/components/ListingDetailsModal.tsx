@@ -24,7 +24,7 @@ interface ListingDetailsModalProps {
   onClose: () => void;
   onMakeOffer: () => void;
   onAcceptOffer: (counterOfferId: bigint) => Promise<`0x${string}`>;
-  onCancelListing: () => void;
+  onCancelListing: () => Promise<`0x${string}`>;
   onCancelOffer: (counterOfferId: bigint) => Promise<`0x${string}`>;
   tokiemonInfo: Record<string, TokiemonDetails>;
   refetchOffers?: () => void;
@@ -51,6 +51,7 @@ export function ListingDetailsModal({
   const [isAcceptingOffer, setIsAcceptingOffer] = useState(false);
   const [isCancelingOffer, setIsCancelingOffer] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [isCancelingListing, setIsCancelingListing] = useState(false);
 
   const { isLoading: isWaitingForTx, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -109,8 +110,14 @@ export function ListingDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-lg w-full max-w-lg">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-slate-800 rounded-lg w-full max-w-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="max-h-[600px] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
@@ -123,10 +130,36 @@ export function ListingDetailsModal({
               <div className="flex items-center gap-2">
                 {address === listing.owner && (
                   <button
-                    onClick={onCancelListing}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm rounded-lg transition-colors duration-200 font-medium"
+                    onClick={async () => {
+                      try {
+                        setIsCancelingListing(true);
+                        const hash = await onCancelListing();
+                        setTxHash(hash);
+                        setSuccessMessage("Listing cancelled successfully!");
+                      } catch (error) {
+                        console.error("Failed to cancel listing:", error);
+                        setIsCancelingListing(false);
+                        setShowSuccessToast(true);
+                        setSuccessMessage("Failed to cancel listing. Please try again.");
+                        setTimeout(() => setShowSuccessToast(false), 4000);
+                      }
+                    }}
+                    disabled={isCancelingListing || isWaitingForTx || isSuccess}
+                    className="flex items-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm rounded-lg transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Cancel
+                    {isSuccess ? (
+                      <>
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                        Success!
+                      </>
+                    ) : isCancelingListing || isWaitingForTx ? (
+                      <>
+                        <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        {isWaitingForTx ? "Confirming..." : "Cancel"}
+                      </>
+                    ) : (
+                      "Cancel"
+                    )}
                   </button>
                 )}
                 {address !== listing.owner && (
@@ -266,14 +299,16 @@ export function ListingDetailsModal({
                     <h3 className="text-sm font-medium text-slate-400 mb-2">Items</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {listing.itemIds.map((id, index) => (
-                        <div key={id.toString()} className="bg-slate-700 rounded-lg p-2">
+                        <div key={id.toString()} className="bg-slate-700 rounded-lg p-2 relative">
+                          <div className="absolute top-3 left-3 bg-black bg-opacity-75 rounded-full w-5 h-5 flex items-center justify-center text-xs text-white">
+                            {listing.itemAmounts[index].toString()}
+                          </div>
                           <img
                             src={itemsInfo[id.toString()]?.image}
                             alt={itemsInfo[id.toString()]?.name}
                             className="w-full aspect-square rounded-lg mb-1"
                           />
-                          <div className="text-white text-sm truncate">{itemsInfo[id.toString()]?.name}</div>
-                          <div className="text-slate-400 text-xs">x{listing.itemAmounts[index].toString()}</div>
+                          <div className="text-white text-xs truncate">{itemsInfo[id.toString()]?.name}</div>
                         </div>
                       ))}
                     </div>
@@ -460,16 +495,16 @@ export function ListingDetailsModal({
                     <h3 className="text-sm font-medium text-slate-400 mb-2">Items</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {activeOffers[currentOfferIndex].itemIds.map((id, index) => (
-                        <div key={id.toString()} className="bg-slate-700 rounded-lg p-2">
+                        <div key={id.toString()} className="bg-slate-700 rounded-lg p-2 relative">
+                          <div className="absolute top-3 left-3 bg-black bg-opacity-75 rounded-full w-5 h-5 flex items-center justify-center text-xs text-white">
+                            {activeOffers[currentOfferIndex].itemAmounts[index].toString()}
+                          </div>
                           <img
                             src={itemsInfo[id.toString()]?.image}
                             alt={itemsInfo[id.toString()]?.name}
                             className="w-full aspect-square rounded-lg mb-1"
                           />
-                          <div className="text-white text-sm truncate">{itemsInfo[id.toString()]?.name}</div>
-                          <div className="text-slate-400 text-xs">
-                            x{activeOffers[currentOfferIndex].itemAmounts[index].toString()}
-                          </div>
+                          <div className="text-white text-xs truncate">{itemsInfo[id.toString()]?.name}</div>
                         </div>
                       ))}
                     </div>

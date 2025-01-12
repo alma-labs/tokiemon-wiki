@@ -66,79 +66,79 @@ export default function App() {
     <ChainGuard>
       <div className="min-h-screen bg-slate-900">
         <header className="bg-slate-800 shadow-lg sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
                   <img
                     src="https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/rarities/legendary.png"
                     alt=""
-                    className="w-8 h-8"
+                    className="w-7 h-7 sm:w-8 sm:h-8"
                   />
                   Tokiemon Wiki & Market
                 </h1>
-                <p className="text-[#94a3b8] mt-1">Discover Tokiemon Monsters & Items of Degenia</p>
+                <p className="text-[#94a3b8] text-sm sm:text-base mt-0.5">Discover Tokiemon Monsters & Items of Degenia</p>
               </div>
               {activeSection === "market" || activeSection === "black-market" ? (
                 <Market />
               ) : (
-                <div className="mt-4 md:mt-0 flex gap-2">
+                <div className="flex gap-2">
                   <a
                     href="https://docs.tokiemon.io"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 
-                      text-white rounded-lg transition-colors duration-200 font-medium"
+                    className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-slate-700 hover:bg-slate-600 
+                      text-white rounded-lg transition-colors duration-200 font-medium text-sm"
                   >
                     <span>View Docs</span>
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                   <a
                     href="https://app.tokiemon.io"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 px-6 py-2 bg-[#1da1f2] hover:bg-[#1a91da] 
-                      text-white rounded-lg transition-colors duration-200 font-medium shadow-[0_0_10px_rgba(29,161,242,0.3)]"
+                    className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-[#1da1f2] hover:bg-[#1a91da] 
+                      text-white rounded-lg transition-colors duration-200 font-medium text-sm shadow-[0_0_10px_rgba(29,161,242,0.3)]"
                   >
                     <span>Play Tokiemon</span>
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               )}
             </div>
 
-            <nav className="flex space-x-1">
+            <nav className="flex flex-wrap gap-1 mt-3">
               <button
                 onClick={() => handleNavigation("items")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
                   activeSection === "items"
                     ? "bg-slate-700 text-white"
                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
-                <Sword className="w-4 h-4" />
+                <Sword className="w-3.5 h-3.5" />
                 Items
               </button>
               <button
                 onClick={() => handleNavigation("monsters")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
                   activeSection === "monsters"
                     ? "bg-slate-700 text-white"
                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
-                <Ghost className="w-4 h-4" />
+                <Ghost className="w-3.5 h-3.5" />
                 Monsters
               </button>
               <button
                 onClick={() => handleNavigation("market")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
                   activeSection === "market"
                     ? "bg-slate-700 text-white"
                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
-                <Wallet className="w-4 h-4" />
+                <Wallet className="w-3.5 h-3.5" />
                 <span>Market</span>
                 <span className="text-[10px] px-1.5 py-0.5 bg-[#1da1f2] text-white rounded-full font-medium leading-none">
                   beta
@@ -146,13 +146,13 @@ export default function App() {
               </button>
               <button
                 onClick={() => handleNavigation("black-market")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
                   activeSection === "black-market"
                     ? "bg-slate-700 text-white"
                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
-                <Skull className="w-4 h-4" />
+                <Skull className="w-3.5 h-3.5" />
                 <span>Black Market</span>
                 <span className="text-[10px] px-1.5 py-0.5 bg-red-500 text-white rounded-full font-medium leading-none">
                   alpha
