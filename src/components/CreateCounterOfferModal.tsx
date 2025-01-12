@@ -270,7 +270,7 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <div>

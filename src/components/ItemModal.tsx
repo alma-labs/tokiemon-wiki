@@ -9,7 +9,7 @@ interface ItemModalProps {
 export default function ItemModal({ item, onClose }: ItemModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#1a2432] border border-[#2a3844] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto text-[#e2e8f0] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      <div className="bg-[#1a2432] border border-[#2a3844] rounded-lg max-w-2xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto text-[#e2e8f0] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div>

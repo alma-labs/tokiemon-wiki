@@ -192,7 +192,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
     try {
       // Validation checks...
       if (!name.trim()) {
-        setFormError("Please enter a listing name");
+        setFormError("Please enter a listing note");
         setIsCreating(false);
         return;
       }
@@ -269,7 +269,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">Create Black Market Listing</h2>
@@ -280,12 +280,12 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Name</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Note</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Make it funny"
+                  placeholder="A note for potential buyers"
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
                     focus:ring-2 focus:ring-red-500 focus:border-transparent 
                     text-white placeholder-gray-400"

@@ -62,7 +62,7 @@ export default function MonsterArtModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#1a2432] border border-[#2a3844] rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto text-[#e2e8f0] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      <div className="bg-[#1a2432] border border-[#2a3844] rounded-lg max-w-6xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto text-[#e2e8f0] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">

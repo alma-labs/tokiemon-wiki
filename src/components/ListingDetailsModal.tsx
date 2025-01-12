@@ -144,7 +144,7 @@ export function ListingDetailsModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-slate-800 rounded-lg w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -259,7 +259,7 @@ export function ListingDetailsModal({
                                     #{tokiemonDetails?.tokenId || id.toString()}
                                   </span>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 text-sm mb-2">
+                                <div className="hidden sm:grid sm:grid-cols-3 sm:gap-2 text-sm mb-2">
                                   <span className="text-white flex items-center gap-1">
                                     <img
                                       src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${
@@ -305,30 +305,54 @@ export function ListingDetailsModal({
                                     )?.value || "-"}
                                   </span>
                                 </div>
+
+                                <div className="sm:hidden flex flex-col gap-1 mb-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Community:</span>
+                                    <span className="text-white flex items-center gap-1">
+                                      <img
+                                        src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${
+                                          tokiemonDetails?.attributes?.find(
+                                            (a: TokiemonAttribute) => a.trait_type === "Community"
+                                          )?.value || "USDC"
+                                        }.png`}
+                                        alt=""
+                                        className="w-4 h-4 rounded-full"
+                                      />
+                                      {tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Community")?.value || "-"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Tier:</span>
+                                    <span className="text-white">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Purchase Tier")?.value || "-"}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Rarity:</span>
+                                    <span className={`${
+                                      tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Legendary"
+                                        ? "text-blue-400 font-bold animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,1)] scale-110"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Epic"
+                                        ? "text-purple-400 font-bold drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Rare"
+                                        ? "text-red-400 font-semibold drop-shadow-[0_0_6px_rgba(248,113,113,0.7)]"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Uncommon"
+                                        ? "text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]"
+                                        : "text-gray-300"}`}
+                                    >
+                                      {tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value || "-"}
+                                    </span>
+                                  </div>
+                                </div>
+
                                 <div className="grid grid-cols-3 gap-2 text-sm">
-                                  <div className="text-slate-400">
-                                    ATK:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Attack"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    ATK: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Attack")?.value || "-"}</span>
                                   </div>
-                                  <div className="text-slate-400">
-                                    DEF:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Defense"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    DEF: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Defense")?.value || "-"}</span>
                                   </div>
-                                  <div className="text-slate-400">
-                                    MAG:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Magic"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    MAG: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Magic")?.value || "-"}</span>
                                   </div>
                                 </div>
                               </div>
@@ -483,7 +507,7 @@ export function ListingDetailsModal({
                                     #{tokiemonDetails?.tokenId || id.toString()}
                                   </span>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 text-sm mb-2">
+                                <div className="hidden sm:grid sm:grid-cols-3 sm:gap-2 text-sm mb-2">
                                   <span className="text-white flex items-center gap-1">
                                     <img
                                       src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${
@@ -529,30 +553,54 @@ export function ListingDetailsModal({
                                     )?.value || "-"}
                                   </span>
                                 </div>
+
+                                <div className="sm:hidden flex flex-col gap-1 mb-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Community:</span>
+                                    <span className="text-white flex items-center gap-1">
+                                      <img
+                                        src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${
+                                          tokiemonDetails?.attributes?.find(
+                                            (a: TokiemonAttribute) => a.trait_type === "Community"
+                                          )?.value || "USDC"
+                                        }.png`}
+                                        alt=""
+                                        className="w-4 h-4 rounded-full"
+                                      />
+                                      {tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Community")?.value || "-"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Tier:</span>
+                                    <span className="text-white">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Purchase Tier")?.value || "-"}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-400">Rarity:</span>
+                                    <span className={`${
+                                      tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Legendary"
+                                        ? "text-blue-400 font-bold animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,1)] scale-110"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Epic"
+                                        ? "text-purple-400 font-bold drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Rare"
+                                        ? "text-red-400 font-semibold drop-shadow-[0_0_6px_rgba(248,113,113,0.7)]"
+                                        : tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value === "Uncommon"
+                                        ? "text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]"
+                                        : "text-gray-300"}`}
+                                    >
+                                      {tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Rarity")?.value || "-"}
+                                    </span>
+                                  </div>
+                                </div>
+
                                 <div className="grid grid-cols-3 gap-2 text-sm">
-                                  <div className="text-slate-400">
-                                    ATK:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Attack"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    ATK: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Attack")?.value || "-"}</span>
                                   </div>
-                                  <div className="text-slate-400">
-                                    DEF:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Defense"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    DEF: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Defense")?.value || "-"}</span>
                                   </div>
-                                  <div className="text-slate-400">
-                                    MAG:{" "}
-                                    <span className="text-white">
-                                      {tokiemonDetails?.attributes?.find(
-                                        (a: TokiemonAttribute) => a.trait_type === "Magic"
-                                      )?.value || "-"}
-                                    </span>
+                                  <div className="text-slate-400 flex items-center">
+                                    MAG: <span className="text-white ml-1">{tokiemonDetails?.attributes?.find((a: TokiemonAttribute) => a.trait_type === "Magic")?.value || "-"}</span>
                                   </div>
                                 </div>
                               </div>
