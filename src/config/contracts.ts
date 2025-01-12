@@ -25,8 +25,8 @@ export const USERNAME_REGISTRY_CONTRACTS = {
 } as const;
 
 export const BLACK_MARKET_CONTRACTS = {
-  [base.id]: "0x608064c907EF4cdE8204a0dB27973695f2b61831",
-  [baseSepolia.id]: "0x0Ebc45A38613FFfBAe2b02dcD5CC693c556C88Ff",
+  [base.id]: "0xEe4772fB5fA5349122f512F489758Ad18E852a0c",
+  [baseSepolia.id]: "0x5eCA90d4D53b4844C6E6884aC6089074a9145cBA",
 } as const;
 
 export const USDC_CONTRACTS = {

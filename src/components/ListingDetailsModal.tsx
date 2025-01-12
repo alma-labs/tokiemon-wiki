@@ -153,6 +153,9 @@ export function ListingDetailsModal({
                   Listing #{listingId.toString()} •{" "}
                   {ownerUsername || `${listing.owner.slice(0, 6)}...${listing.owner.slice(-4)}`}
                 </p>
+                {listing.note && (
+                  <p className="text-slate-300 text-sm mt-2">{listing.note}</p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {address === listing.owner && (

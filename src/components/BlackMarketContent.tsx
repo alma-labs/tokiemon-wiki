@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount, useReadContract, useChainId, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { Wallet, Plus, ChevronRight, AlertCircle } from "lucide-react";
+import { Wallet, Plus, ChevronRight, AlertCircle, ArrowRight } from "lucide-react";
 import { BLACK_MARKET_CONTRACTS } from "../config/contracts";
 import { BLACK_MARKET_ABI } from "../config/abis";
 import { CreateListingModal } from "./CreateListingModal";
@@ -20,15 +20,15 @@ export interface CounterOffer {
 }
 
 export interface Listing {
+  owner: `0x${string}`;
   name: string;
-  owner: string;
+  note: string;
   tokiemonIds: bigint[];
   itemIds: bigint[];
   itemAmounts: bigint[];
   usdcAmount: bigint;
   isActive: boolean;
   counterOffers: CounterOffer[];
-  counterOfferIds: bigint[];
 }
 
 export interface ItemInfo {
@@ -49,6 +49,230 @@ export interface TokiemonInfo {
   }>;
 }
 
+interface TradeDetails {
+  listingId: bigint;
+  listingName: string;
+  listingNote: string;
+  listingOwner: `0x${string}`;
+  listingTokiemonIds: bigint[];
+  listingItemIds: bigint[];
+  listingItemAmounts: bigint[];
+  listingUsdcAmount: bigint;
+  acceptedOfferId: bigint;
+  offerOwner: `0x${string}`;
+  offerTokiemonIds: bigint[];
+  offerItemIds: bigint[];
+  offerItemAmounts: bigint[];
+  offerUsdcAmount: bigint;
+  timestamp: bigint;
+}
+
+function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string, ItemInfo>; tokiemonInfo: Record<string, TokiemonInfo> }) {
+  const chainId = useChainId();
+  const [trades, setTrades] = useState<TradeDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const tradesPerPage = 10n;
+  const [localTokiemonInfo, setLocalTokiemonInfo] = useState<Record<string, TokiemonInfo>>(tokiemonInfo);
+
+  const { data: tradeHistory } = useReadContract({
+    address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
+    abi: BLACK_MARKET_ABI,
+    functionName: "getTradeHistory",
+    args: [BigInt(currentPage) * tradesPerPage, tradesPerPage],
+  });
+
+  const listingOwnerUsernames = useUsernames(trades.map(trade => trade.listingOwner));
+  const offerOwnerUsernames = useUsernames(trades.map(trade => trade.offerOwner));
+
+  useEffect(() => {
+    if (tradeHistory) {
+      setTrades(tradeHistory as TradeDetails[]);
+      setLoading(false);
+
+      // Collect all unique Tokiemon IDs from the trade history
+      const tokiemonIds = new Set<string>();
+      (tradeHistory as TradeDetails[]).forEach(trade => {
+        trade.listingTokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
+        trade.offerTokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
+      });
+
+      // Fetch metadata for any Tokiemon IDs we don't have yet
+      const missingIds = Array.from(tokiemonIds).filter(id => !localTokiemonInfo[id]);
+      if (missingIds.length > 0) {
+        fetch(`https://api.tokiemon.io/tokiemon?ids=${missingIds.join(',')}&chainId=${chainId}`)
+          .then(response => response.json())
+          .then(metadata => {
+            const newInfo = { ...localTokiemonInfo };
+            metadata.forEach((tokiemon: TokiemonInfo) => {
+              newInfo[tokiemon.tokenId] = tokiemon;
+            });
+            setLocalTokiemonInfo(newInfo);
+          })
+          .catch(err => console.error('Failed to load Tokiemon metadata:', err));
+      }
+    }
+  }, [tradeHistory, chainId, localTokiemonInfo]);
+
+  if (loading) {
+    return (
+      <div className="text-slate-400 text-center py-12">
+        Loading trade history...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="divide-y divide-slate-700">
+        {trades.map((trade) => (
+          <div key={`${trade.listingId}-${trade.acceptedOfferId}`} className="p-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-medium text-white">{trade.listingName}</div>
+                  <div className="text-sm text-slate-400">#{trade.listingId.toString()}</div>
+                </div>
+                <div className="text-sm text-slate-400">
+                  {new Date(Number(trade.timestamp) * 1000).toLocaleDateString()}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="text-sm text-slate-400 mb-2">Original Listing</div>
+                  <div className="text-xs text-slate-500 mb-2">
+                    by {listingOwnerUsernames[trade.listingOwner] || `${trade.listingOwner.slice(0, 6)}...${trade.listingOwner.slice(-4)}`}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {trade.listingUsdcAmount > 0n && (
+                      <div className="relative">
+                        <img
+                          src="https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/USDC.png"
+                          alt="USDC"
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-slate-700 px-1.5 rounded text-xs text-white border border-slate-600">
+                          ${(Number(trade.listingUsdcAmount) / 1e6).toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    {trade.listingTokiemonIds.map((id) => (
+                      <div key={id.toString()} className="relative group">
+                        <img
+                          src={localTokiemonInfo[id.toString()]?.image}
+                          alt={localTokiemonInfo[id.toString()]?.name || `Tokiemon #${id}`}
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[100]">
+                          <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-nowrap border border-slate-600">
+                            <div className="text-white text-xs">{localTokiemonInfo[id.toString()]?.name || `Tokiemon #${id}`}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {trade.listingItemIds.map((id, index) => (
+                      <div key={id.toString()} className="relative group">
+                        <img
+                          src={itemsInfo[id.toString()]?.image}
+                          alt={itemsInfo[id.toString()]?.name}
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-slate-700 px-1.5 rounded text-xs text-white border border-slate-600">
+                          x{trade.listingItemAmounts[index].toString()}
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[100]">
+                          <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-nowrap border border-slate-600">
+                            <div className="text-white text-xs">{itemsInfo[id.toString()]?.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <ArrowRight className="w-5 h-5 text-slate-500 flex-shrink-0" />
+
+                <div className="flex-1">
+                  <div className="text-sm text-slate-400 mb-2">Accepted Offer</div>
+                  <div className="text-xs text-slate-500 mb-2">
+                    by {offerOwnerUsernames[trade.offerOwner] || `${trade.offerOwner.slice(0, 6)}...${trade.offerOwner.slice(-4)}`}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {trade.offerUsdcAmount > 0n && (
+                      <div className="relative">
+                        <img
+                          src="https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/USDC.png"
+                          alt="USDC"
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-slate-700 px-1.5 rounded text-xs text-white border border-slate-600">
+                          ${(Number(trade.offerUsdcAmount) / 1e6).toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    {trade.offerTokiemonIds.map((id) => (
+                      <div key={id.toString()} className="relative group">
+                        <img
+                          src={localTokiemonInfo[id.toString()]?.image}
+                          alt={localTokiemonInfo[id.toString()]?.name || `Tokiemon #${id}`}
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[100]">
+                          <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-nowrap border border-slate-600">
+                            <div className="text-white text-xs">{localTokiemonInfo[id.toString()]?.name || `Tokiemon #${id}`}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {trade.offerItemIds.map((id, index) => (
+                      <div key={id.toString()} className="relative group">
+                        <img
+                          src={itemsInfo[id.toString()]?.image}
+                          alt={itemsInfo[id.toString()]?.name}
+                          className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-slate-700 px-1.5 rounded text-xs text-white border border-slate-600">
+                          x{trade.offerItemAmounts[index].toString()}
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[100]">
+                          <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-nowrap border border-slate-600">
+                            <div className="text-white text-xs">{itemsInfo[id.toString()]?.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="flex justify-between items-center p-4 border-t border-slate-700">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+          disabled={currentPage === 0}
+          className="px-3 py-1 bg-slate-700 text-white rounded hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+        >
+          Previous
+        </button>
+        <div className="text-sm text-slate-400">
+          Page {currentPage + 1}
+        </div>
+        <button
+          onClick={() => setCurrentPage(prev => prev + 1)}
+          disabled={trades.length < Number(tradesPerPage)}
+          className="px-3 py-1 bg-slate-700 text-white rounded hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function BlackMarketContent() {
   const { address } = useAccount();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -57,7 +281,7 @@ export function BlackMarketContent() {
   const [selectedListingForDetails, setSelectedListingForDetails] = useState<bigint | null>(null);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [tokiemonInfo, setTokiemonInfo] = useState<Record<string, TokiemonInfo>>({});
-  const [activeTab, setActiveTab] = useState<"open" | "your-listings" | "your-offers">("open");
+  const [activeTab, setActiveTab] = useState<"open" | "your-listings" | "your-offers" | "history">("open");
 
   const { data: activeListings, refetch: refetchActiveListings } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
@@ -296,6 +520,13 @@ export function BlackMarketContent() {
             >
               Offers
             </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`transition-colors duration-200 
+                ${activeTab === "history" ? "text-white font-medium" : "text-slate-400 hover:text-slate-300"}`}
+            >
+              History
+            </button>
           </div>
         </div>
         <button
@@ -309,8 +540,10 @@ export function BlackMarketContent() {
         </button>
       </div>
 
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
-        {sortedListings.length === 0 ? (
+      <div className="bg-slate-800 rounded-lg overflow-visible">
+        {activeTab === "history" ? (
+          <HistoryContent itemsInfo={itemsInfo} tokiemonInfo={tokiemonInfo} />
+        ) : sortedListings.length === 0 ? (
           <div className="text-slate-400 text-center py-12">
             {activeTab === "your-listings"
               ? "You don't have any active listings"
@@ -319,7 +552,7 @@ export function BlackMarketContent() {
               : "No active listings found"}
           </div>
         ) : (
-          <div className="divide-y divide-slate-700">
+          <div className="divide-y divide-slate-700 overflow-visible">
             {sortedListings.map(({ listing, id }) => {
               const activeOffers = listing.counterOffers.filter((offer) => offer.isActive);
               return (
@@ -334,6 +567,18 @@ export function BlackMarketContent() {
                         <div className="flex items-center gap-2">
                           <div className="text-lg font-medium text-white">{listing.name}</div>
                           <div className="text-sm text-slate-400">#{id.toString()}</div>
+                          {listing.note && (
+                            <div className="group relative">
+                              <div className="w-4 h-4 rounded-full border border-slate-500 flex items-center justify-center text-xs text-slate-400 cursor-help">i</div>
+                              <div className="absolute left-0 hidden group-hover:block z-[100]" style={{
+                                bottom: 'calc(100% + 0.5rem)',
+                              }}>
+                                <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-pre-wrap border border-slate-600" style={{ width: 'max-content', maxWidth: '300px' }}>
+                                  <p className="text-slate-300 text-sm">{listing.note}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-slate-400">
                           <div>

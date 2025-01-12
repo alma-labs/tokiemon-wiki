@@ -23,6 +23,7 @@ interface TokiemonInfo {
 
 export function CreateListingModal({ onClose }: CreateListingModalProps) {
   const [name, setName] = useState<string>("");
+  const [note, setNote] = useState<string>("");
   const [selectedTokiemon, setSelectedTokiemon] = useState<string[]>([]);
   const [selectedItems, setSelectedItems] = useState<{id: string, amount: string}[]>([]);
   const [usdcAmount, setUsdcAmount] = useState<string>("");
@@ -222,6 +223,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
         functionName: "createListing",
         args: [
           name,
+          note,
           selectedTokiemon.map(id => BigInt(id)),
           selectedItems.map(item => BigInt(item.id)),
           selectedItems.map(item => BigInt(item.amount)),
@@ -280,15 +282,28 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Note</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="A note for potential buyers"
+                  placeholder="A name for your listing"
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
                     focus:ring-2 focus:ring-red-500 focus:border-transparent 
                     text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Listing Note</label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Add a note about your listing (optional)"
+                  rows={3}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
+                    focus:ring-2 focus:ring-red-500 focus:border-transparent 
+                    text-white placeholder-gray-400 resize-none"
                 />
               </div>
 

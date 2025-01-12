@@ -2064,6 +2064,7 @@ export const BLACK_MARKET_ABI = [
       { indexed: true, internalType: "uint256", name: "listingId", type: "uint256" },
       { indexed: true, internalType: "address", name: "owner", type: "address" },
       { indexed: false, internalType: "string", name: "name", type: "string" },
+      { indexed: false, internalType: "string", name: "note", type: "string" },
       { indexed: false, internalType: "uint256[]", name: "tokiemonIds", type: "uint256[]" },
       { indexed: false, internalType: "uint256[]", name: "itemIds", type: "uint256[]" },
       { indexed: false, internalType: "uint256[]", name: "itemAmounts", type: "uint256[]" },
@@ -2178,6 +2179,7 @@ export const BLACK_MARKET_ABI = [
   {
     inputs: [
       { internalType: "string", name: "_name", type: "string" },
+      { internalType: "string", name: "_note", type: "string" },
       { internalType: "uint256[]", name: "_tokiemonIds", type: "uint256[]" },
       { internalType: "uint256[]", name: "_itemIds", type: "uint256[]" },
       { internalType: "uint256[]", name: "_itemAmounts", type: "uint256[]" },
@@ -2210,6 +2212,7 @@ export const BLACK_MARKET_ABI = [
         components: [
           { internalType: "address", name: "owner", type: "address" },
           { internalType: "string", name: "name", type: "string" },
+          { internalType: "string", name: "note", type: "string" },
           { internalType: "uint256[]", name: "tokiemonIds", type: "uint256[]" },
           { internalType: "uint256[]", name: "itemIds", type: "uint256[]" },
           { internalType: "uint256[]", name: "itemAmounts", type: "uint256[]" },
@@ -2277,30 +2280,6 @@ export const BLACK_MARKET_ABI = [
     type: "function",
   },
   {
-    inputs: [
-      { internalType: "address", name: "user", type: "address" },
-      { internalType: "uint256", name: "startIndex", type: "uint256" },
-      { internalType: "uint256", name: "count", type: "uint256" },
-    ],
-    name: "getHistoricalTradesByUser",
-    outputs: [
-      {
-        components: [
-          { internalType: "uint256", name: "listingId", type: "uint256" },
-          { internalType: "uint256", name: "acceptedOfferId", type: "uint256" },
-          { internalType: "address", name: "listingOwner", type: "address" },
-          { internalType: "address", name: "offerOwner", type: "address" },
-          { internalType: "uint256", name: "timestamp", type: "uint256" },
-        ],
-        internalType: "struct TokiemonBlackMarket.HistoricalTrade[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [{ internalType: "uint256", name: "_listingId", type: "uint256" }],
     name: "getListingDetails",
     outputs: [
@@ -2316,6 +2295,39 @@ export const BLACK_MARKET_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "uint256", name: "startIndex", type: "uint256" },
+      { internalType: "uint256", name: "count", type: "uint256" },
+    ],
+    name: "getTradeHistory",
+    outputs: [
+      {
+        components: [
+          { internalType: "uint256", name: "listingId", type: "uint256" },
+          { internalType: "string", name: "listingName", type: "string" },
+          { internalType: "string", name: "listingNote", type: "string" },
+          { internalType: "address", name: "listingOwner", type: "address" },
+          { internalType: "uint256[]", name: "listingTokiemonIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "listingItemIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "listingItemAmounts", type: "uint256[]" },
+          { internalType: "uint256", name: "listingUsdcAmount", type: "uint256" },
+          { internalType: "uint256", name: "acceptedOfferId", type: "uint256" },
+          { internalType: "address", name: "offerOwner", type: "address" },
+          { internalType: "uint256[]", name: "offerTokiemonIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "offerItemIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "offerItemAmounts", type: "uint256[]" },
+          { internalType: "uint256", name: "offerUsdcAmount", type: "uint256" },
+          { internalType: "uint256", name: "timestamp", type: "uint256" },
+        ],
+        internalType: "struct TokiemonBlackMarket.TradeDetails[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "address", name: "_user", type: "address" }],
     name: "getUserCounterOffers",
     outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
@@ -2326,6 +2338,40 @@ export const BLACK_MARKET_ABI = [
     inputs: [{ internalType: "address", name: "_user", type: "address" }],
     name: "getUserListings",
     outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "user", type: "address" },
+      { internalType: "uint256", name: "startIndex", type: "uint256" },
+      { internalType: "uint256", name: "count", type: "uint256" },
+    ],
+    name: "getUserTradeHistory",
+    outputs: [
+      {
+        components: [
+          { internalType: "uint256", name: "listingId", type: "uint256" },
+          { internalType: "string", name: "listingName", type: "string" },
+          { internalType: "string", name: "listingNote", type: "string" },
+          { internalType: "address", name: "listingOwner", type: "address" },
+          { internalType: "uint256[]", name: "listingTokiemonIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "listingItemIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "listingItemAmounts", type: "uint256[]" },
+          { internalType: "uint256", name: "listingUsdcAmount", type: "uint256" },
+          { internalType: "uint256", name: "acceptedOfferId", type: "uint256" },
+          { internalType: "address", name: "offerOwner", type: "address" },
+          { internalType: "uint256[]", name: "offerTokiemonIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "offerItemIds", type: "uint256[]" },
+          { internalType: "uint256[]", name: "offerItemAmounts", type: "uint256[]" },
+          { internalType: "uint256", name: "offerUsdcAmount", type: "uint256" },
+          { internalType: "uint256", name: "timestamp", type: "uint256" },
+        ],
+        internalType: "struct TokiemonBlackMarket.TradeDetails[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
     stateMutability: "view",
     type: "function",
   },
@@ -2365,6 +2411,7 @@ export const BLACK_MARKET_ABI = [
     outputs: [
       { internalType: "address", name: "owner", type: "address" },
       { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "note", type: "string" },
       { internalType: "uint256", name: "usdcAmount", type: "uint256" },
       { internalType: "bool", name: "isActive", type: "bool" },
     ],
@@ -2383,6 +2430,18 @@ export const BLACK_MARKET_ABI = [
     name: "nextListingId",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "", type: "address" },
+      { internalType: "address", name: "", type: "address" },
+      { internalType: "uint256", name: "", type: "uint256" },
+      { internalType: "bytes", name: "", type: "bytes" },
+    ],
+    name: "onERC721Received",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "pure",
     type: "function",
   },
   {
