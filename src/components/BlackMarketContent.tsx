@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount, useReadContract, useChainId, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { Wallet, Plus, ChevronRight } from "lucide-react";
+import { Wallet, Plus, ChevronRight, AlertCircle } from "lucide-react";
 import { BLACK_MARKET_CONTRACTS } from "../config/contracts";
 import { BLACK_MARKET_ABI } from "../config/abis";
 import { CreateListingModal } from "./CreateListingModal";
 import { CreateCounterOfferModal } from "./CreateCounterOfferModal";
 import { ListingDetailsModal } from "./ListingDetailsModal";
+import { useUsername, useUsernames } from "../hooks/useUsername";
 
 export interface CounterOffer {
   offerId: bigint;
@@ -55,7 +56,7 @@ export function BlackMarketContent() {
   const [selectedListingForDetails, setSelectedListingForDetails] = useState<bigint | null>(null);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [tokiemonInfo, setTokiemonInfo] = useState<Record<string, TokiemonInfo>>({});
-  const [activeTab, setActiveTab] = useState<'all' | 'your-listings'>('all');
+  const [activeTab, setActiveTab] = useState<"open" | "your-listings" | "your-offers">("open");
 
   const { data: activeListings, refetch: refetchActiveListings } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
@@ -72,6 +73,10 @@ export function BlackMarketContent() {
       enabled: Boolean(activeListings?.length),
     },
   });
+
+  const ownerUsernames = useUsernames(
+    listingsWithOffers && Array.isArray(listingsWithOffers) ? listingsWithOffers.map((listing) => listing.owner) : []
+  );
 
   const { writeContract } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
@@ -129,9 +134,9 @@ export function BlackMarketContent() {
       isCounterOfferIdValid: Boolean(counterOfferId),
       listingIdType: typeof listingId,
       counterOfferIdType: typeof counterOfferId,
-      rawCounterOfferId: counterOfferId
+      rawCounterOfferId: counterOfferId,
     });
-    
+
     try {
       writeContract({
         address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
@@ -176,26 +181,28 @@ export function BlackMarketContent() {
   useEffect(() => {
     const fetchTokiemonMetadata = async () => {
       if (!listingsWithOffers) return;
-      
+
       const tokiemonIds = new Set<string>();
-      listingsWithOffers.forEach(listing => {
-        listing.tokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
-        listing.counterOffers.forEach(offer => {
-          offer.tokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
+      listingsWithOffers.forEach((listing) => {
+        listing.tokiemonIds.forEach((id) => tokiemonIds.add(id.toString()));
+        listing.counterOffers.forEach((offer) => {
+          offer.tokiemonIds.forEach((id) => tokiemonIds.add(id.toString()));
         });
       });
 
       if (tokiemonIds.size === 0) return;
 
       try {
-        const response = await fetch(`https://api.tokiemon.io/tokiemon?ids=${Array.from(tokiemonIds).join(',')}&chainId=${chainId}`);
-        if (!response.ok) throw new Error('Failed to fetch Tokiemon metadata');
-        
+        const response = await fetch(
+          `https://api.tokiemon.io/tokiemon?ids=${Array.from(tokiemonIds).join(",")}&chainId=${chainId}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch Tokiemon metadata");
+
         const metadata = await response.json();
         const info = Object.fromEntries(metadata.map((tokiemon: TokiemonInfo) => [tokiemon.tokenId, tokiemon]));
         setTokiemonInfo(info);
       } catch (err) {
-        console.error('Failed to load Tokiemon metadata:', err);
+        console.error("Failed to load Tokiemon metadata:", err);
       }
     };
 
@@ -207,11 +214,22 @@ export function BlackMarketContent() {
     refetchListingsWithOffers?.();
   };
 
-  const sortedListings = listingsWithOffers 
+  const sortedListings = listingsWithOffers
     ? [...Array(listingsWithOffers.length).keys()]
-      .map(i => ({ listing: listingsWithOffers[i], id: activeListings![i] }))
-      .sort((a, b) => Number(b.id - a.id))
-      .filter(({ listing }) => activeTab === 'all' || listing.owner.toLowerCase() === address?.toLowerCase())
+        .map((i) => ({ listing: listingsWithOffers[i], id: activeListings![i] }))
+        .sort((a, b) => Number(b.id - a.id))
+        .filter(({ listing }) => {
+          if (activeTab === "open") {
+            return listing.owner.toLowerCase() !== address?.toLowerCase();
+          }
+          if (activeTab === "your-listings") {
+            return listing.owner.toLowerCase() === address?.toLowerCase();
+          }
+          // your-offers tab
+          return listing.counterOffers.some(
+            (offer) => offer.owner.toLowerCase() === address?.toLowerCase() && offer.isActive
+          );
+        })
     : [];
 
   if (!address) {
@@ -228,57 +246,80 @@ export function BlackMarketContent() {
     );
   }
 
-  const selectedListing = selectedListingForDetails && listingsWithOffers && activeListings 
-    ? listingsWithOffers[activeListings.indexOf(selectedListingForDetails)]
-    : null;
+  const selectedListing =
+    selectedListingForDetails && listingsWithOffers && activeListings
+      ? listingsWithOffers[activeListings.indexOf(selectedListingForDetails)]
+      : null;
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-white">Active Listings</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-white">Active Listings</h2>
+            <div className="group relative">
+              <AlertCircle className="w-5 h-5 text-yellow-500/70 hover:text-yellow-500 cursor-help" />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                <div className="bg-slate-800 rounded p-3 shadow-lg whitespace-nowrap border border-yellow-500/20 max-w-xs">
+                  <div className="text-yellow-500/90 text-sm font-medium mb-1">⚠️ Heads Up Mfers</div>
+                  <ul className="text-slate-300 text-xs space-y-1">
+                    <li>• all items in listings and offers are held in escrow</li>
+                    <li>• equipment on Tokiemon will transfer with them</li>
+                    <li>• i didnt test heavily - use with caution</li>
+                    <li>• stay based, stay sexy</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="flex gap-4 text-sm">
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => setActiveTab("open")}
               className={`transition-colors duration-200 
-                ${activeTab === 'all' 
-                  ? 'text-white font-medium' 
-                  : 'text-slate-400 hover:text-slate-300'}`}
+                ${activeTab === "open" ? "text-white font-medium" : "text-slate-400 hover:text-slate-300"}`}
             >
-              All
+              Open Listings
             </button>
             <button
-              onClick={() => setActiveTab('your-listings')}
+              onClick={() => setActiveTab("your-listings")}
               className={`transition-colors duration-200 
-                ${activeTab === 'your-listings' 
-                  ? 'text-white font-medium' 
-                  : 'text-slate-400 hover:text-slate-300'}`}
+                ${activeTab === "your-listings" ? "text-white font-medium" : "text-slate-400 hover:text-slate-300"}`}
             >
               Your Listings
+            </button>
+            <button
+              onClick={() => setActiveTab("your-offers")}
+              className={`transition-colors duration-200 
+                ${activeTab === "your-offers" ? "text-white font-medium" : "text-slate-400 hover:text-slate-300"}`}
+            >
+              Listings You've Offered
             </button>
           </div>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 
-            text-white rounded-lg transition-colors duration-200 font-medium"
+          className="flex items-center gap-2 px-4 py-2 sm:px-4 sm:py-2 bg-blue-500 hover:bg-blue-600 
+            text-white rounded-lg transition-colors duration-200 font-medium text-sm sm:text-base"
         >
           <Plus className="w-4 h-4" />
-          Create Listing
+          <span className="hidden sm:inline">Create Listing</span>
+          <span className="sm:hidden">Create</span>
         </button>
       </div>
 
       <div className="bg-slate-800 rounded-lg overflow-hidden">
         {sortedListings.length === 0 ? (
           <div className="text-slate-400 text-center py-12">
-            {activeTab === 'your-listings' 
-              ? "You don't have any active listings" 
+            {activeTab === "your-listings"
+              ? "You don't have any active listings"
+              : activeTab === "your-offers"
+              ? "You haven't made any offers"
               : "No active listings found"}
           </div>
         ) : (
           <div className="divide-y divide-slate-700">
             {sortedListings.map(({ listing, id }) => {
-              const activeOffers = listing.counterOffers.filter(offer => offer.isActive);
+              const activeOffers = listing.counterOffers.filter((offer) => offer.isActive);
               return (
                 <div
                   key={id.toString()}
@@ -293,7 +334,11 @@ export function BlackMarketContent() {
                           <div className="text-sm text-slate-400">#{id.toString()}</div>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-slate-400">
-                          <div>Owner: {listing.owner.slice(0, 6)}...{listing.owner.slice(-4)}</div>
+                          <div>
+                            Owner:{" "}
+                            {ownerUsernames[listing.owner] ||
+                              `${listing.owner.slice(0, 6)}...${listing.owner.slice(-4)}`}
+                          </div>
                           <div className="flex items-center gap-1">
                             <span>Offers:</span>
                             <span className="text-white">{activeOffers.length}</span>
@@ -302,7 +347,7 @@ export function BlackMarketContent() {
                       </div>
                       <ChevronRight className="w-5 h-5 text-slate-400" />
                     </div>
-                      
+
                     <div className="flex flex-wrap items-center gap-3">
                       {listing.usdcAmount > 0n && (
                         <div className="relative group">
@@ -326,7 +371,10 @@ export function BlackMarketContent() {
                             return (
                               <div key={id.toString()} className="relative group">
                                 <img
-                                  src={tokiemon?.image || `https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${id}.png`}
+                                  src={
+                                    tokiemon?.image ||
+                                    `https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${id}.png`
+                                  }
                                   alt={tokiemon?.name || `Tokiemon #${id}`}
                                   className="w-12 h-12 rounded-lg border border-slate-600 bg-slate-800"
                                 />
@@ -335,14 +383,27 @@ export function BlackMarketContent() {
                                     <div className="text-white text-xs">{tokiemon?.name || `#${id}`}</div>
                                     {tokiemon?.attributes && (
                                       <>
-                                        <div className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}</div>
-                                        <div className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}</div>
-                                        <div className={`text-xs ${
-                                          tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare' ? 'text-yellow-500' :
-                                          tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon' ? 'text-blue-500' :
-                                          'text-slate-400'
-                                        }`}>
-                                          {tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value}
+                                        <div className="text-slate-400 text-xs">
+                                          {tokiemon.attributes.find((attr) => attr.trait_type === "Community")?.value}
+                                        </div>
+                                        <div className="text-slate-400 text-xs">
+                                          {
+                                            tokiemon.attributes.find((attr) => attr.trait_type === "Purchase Tier")
+                                              ?.value
+                                          }
+                                        </div>
+                                        <div
+                                          className={`text-xs ${
+                                            tokiemon.attributes.find((attr) => attr.trait_type === "Rarity")?.value ===
+                                            "Rare"
+                                              ? "text-yellow-500"
+                                              : tokiemon.attributes.find((attr) => attr.trait_type === "Rarity")
+                                                  ?.value === "Uncommon"
+                                              ? "text-blue-500"
+                                              : "text-slate-400"
+                                          }`}
+                                        >
+                                          {tokiemon.attributes.find((attr) => attr.trait_type === "Rarity")?.value}
                                         </div>
                                       </>
                                     )}
@@ -390,11 +451,11 @@ export function BlackMarketContent() {
       </div>
 
       {showCreateModal && <CreateListingModal onClose={() => setShowCreateModal(false)} />}
-      
+
       {selectedListingId !== null && listingsWithOffers && activeListings && (
         <CreateCounterOfferModal
           listingId={BigInt(selectedListingId)}
-          listingName={listingsWithOffers[activeListings.findIndex(id => id === BigInt(selectedListingId))].name}
+          listingName={listingsWithOffers[activeListings.findIndex((id) => id === BigInt(selectedListingId))].name}
           onClose={() => setSelectedListingId(null)}
           refetchOffers={() => refetchListings()}
         />

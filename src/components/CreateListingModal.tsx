@@ -29,12 +29,29 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   const [showTokiemonDropdown, setShowTokiemonDropdown] = useState(false);
   const [showItemsDropdown, setShowItemsDropdown] = useState(false);
   const [ownedTokiemon, setOwnedTokiemon] = useState<TokiemonInfo[]>([]);
+  const [itemSearch, setItemSearch] = useState("");
+  const [tokiemonSearch, setTokiemonSearch] = useState("");
   const [formError, setFormError] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isApprovingNFT, setIsApprovingNFT] = useState(false);
+  const [isApprovingUSDC, setIsApprovingUSDC] = useState(false);
+  const [localNFTApproved, setLocalNFTApproved] = useState(false);
+  const [localUSDCAllowance, setLocalUSDCAllowance] = useState(false);
 
   const { writeContract, data: hash } = useWriteContract();
+  const { writeContract: approveNFT, data: nftApprovalHash } = useWriteContract();
+  const { writeContract: approveUSDC, data: usdcApprovalHash } = useWriteContract();
+  
   const { isLoading: isWaitingForTx, isSuccess } = useWaitForTransactionReceipt({
     hash,
+  });
+  
+  const { isLoading: isWaitingForNFTApproval, isSuccess: nftApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: nftApprovalHash,
+  });
+  
+  const { isLoading: isWaitingForUSDCApproval, isSuccess: usdcApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: usdcApprovalHash,
   });
 
   // Handle transaction success
@@ -44,21 +61,35 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
     }
   }, [isSuccess]);
 
+  // Handle NFT approval success
+  useEffect(() => {
+    if (nftApprovalSuccess) {
+      setIsApprovingNFT(false);
+      setLocalNFTApproved(true);
+    }
+  }, [nftApprovalSuccess]);
+
+  // Handle USDC approval success
+  useEffect(() => {
+    if (usdcApprovalSuccess) {
+      setIsApprovingUSDC(false);
+      setLocalUSDCAllowance(true);
+    }
+  }, [usdcApprovalSuccess]);
+
   const chainId = useChainId();
   const { address } = useAccount();
   const { isNFTApproved, hasUSDCAllowance } = useTokenPermissions(
     BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS]
   );
   const { ownedItems } = useUserAssets();
-  const { writeContract: approveNFT } = useWriteContract();
-  const { writeContract: approveUSDC } = useWriteContract();
 
   // Get USDC balance
   const { data: usdcBalance = 0n } = useReadContract({
     address: USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS],
     abi: ERC20_ABI,
     functionName: "balanceOf",
-    args: address ? [address] : [0n],
+    args: [address ?? "0x0000000000000000000000000000000000000000"],
   });
 
   const formattedUsdcBalance = usdcBalance ? formatUnits(usdcBalance, 6) : "0";
@@ -122,6 +153,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
 
   const handleApproveNFT = async () => {
     try {
+      setIsApprovingNFT(true);
       approveNFT({
         address: TOKIEMON_NFT_CONTRACTS[chainId as keyof typeof TOKIEMON_NFT_CONTRACTS],
         abi: TOKIEMON_NFT_ABI,
@@ -130,11 +162,13 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
       });
     } catch (error) {
       console.error("Failed to approve NFT:", error);
+      setIsApprovingNFT(false);
     }
   };
 
   const handleApproveUSDC = async () => {
     try {
+      setIsApprovingUSDC(true);
       approveUSDC({
         address: USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS],
         abi: ERC20_ABI,
@@ -146,6 +180,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
       });
     } catch (error) {
       console.error("Failed to approve USDC:", error);
+      setIsApprovingUSDC(false);
     }
   };
 
@@ -225,6 +260,12 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
     );
   };
 
+  // Initialize local state from contract state
+  useEffect(() => {
+    setLocalNFTApproved(isNFTApproved);
+    setLocalUSDCAllowance(hasUSDCAllowance);
+  }, [isNFTApproved, hasUSDCAllowance]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
@@ -244,7 +285,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="My Awesome Listing"
+                  placeholder="Make it funny"
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg 
                     focus:ring-2 focus:ring-red-500 focus:border-transparent 
                     text-white placeholder-gray-400"
@@ -253,13 +294,22 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Tokiemon</label>
-                {!isNFTApproved ? (
+                {!localNFTApproved ? (
                   <button
                     onClick={handleApproveNFT}
+                    disabled={isApprovingNFT || isWaitingForNFTApproval}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600
+                      disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Approve Tokiemon Usage
+                    {isApprovingNFT || isWaitingForNFTApproval ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isWaitingForNFTApproval ? "Confirming..." : "Approving..."}
+                      </>
+                    ) : (
+                      "Approve Tokiemon Usage"
+                    )}
                   </button>
                 ) : (
                   <div className="relative">
@@ -275,7 +325,20 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                     {showTokiemonDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
                         shadow-lg max-h-60 overflow-auto">
-                        {ownedTokiemon.map((tokiemon) => (
+                        <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
+                          <input
+                            type="text"
+                            value={tokiemonSearch}
+                            onChange={(e) => setTokiemonSearch(e.target.value)}
+                            placeholder="Search Tokiemon..."
+                            className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                          />
+                        </div>
+                        {ownedTokiemon
+                          .filter(tokiemon => 
+                            tokiemon.name.toLowerCase().includes(tokiemonSearch.toLowerCase())
+                          )
+                          .map((tokiemon) => (
                           <div
                             key={tokiemon.tokenId}
                             onClick={() => toggleTokiemon(tokiemon.tokenId)}
@@ -295,12 +358,27 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                             <div className="flex-grow">
                               <div className="flex items-center gap-2">
                                 <span className="text-white text-sm">{tokiemon.name}</span>
-                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}</span>
-                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}</span>
+                                <span className="text-white text-xs flex items-center gap-1">
+                                  <img 
+                                    src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value || "USDC"}.png`}
+                                    alt=""
+                                    className="w-4 h-4 rounded-full"
+                                  />
+                                  {tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}
+                                </span>
+                                <span className="text-white text-xs">
+                                  {tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}
+                                </span>
                                 <span className={`text-xs ${
-                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare' ? 'text-yellow-500' :
-                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon' ? 'text-blue-500' :
-                                  'text-slate-400'
+                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Legendary'
+                                    ? 'text-blue-400 font-bold animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,1)] scale-110'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Epic'
+                                    ? 'text-purple-400 font-bold drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare'
+                                    ? 'text-red-400 font-semibold drop-shadow-[0_0_6px_rgba(248,113,113,0.7)]'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon'
+                                    ? 'text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]'
+                                    : 'text-gray-300'
                                 }`}>
                                   {tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value}
                                 </span>
@@ -352,29 +430,42 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                   {showItemsDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
                       shadow-lg max-h-60 overflow-auto">
-                      {ownedItems.map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => toggleItem(item.id)}
-                          className="flex items-center gap-3 p-2 hover:bg-slate-600 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedItems.some(i => i.id === item.id)}
-                            readOnly
-                            className="rounded border-slate-500"
-                          />
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-8 h-8 rounded"
-                          />
-                          <div>
-                            <div className="text-white text-sm">{item.name}</div>
-                            <div className="text-slate-400 text-xs">Balance: {item.balance.toString()}</div>
+                      <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
+                        <input
+                          type="text"
+                          value={itemSearch}
+                          onChange={(e) => setItemSearch(e.target.value)}
+                          placeholder="Search Items..."
+                          className="w-full px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm"
+                        />
+                      </div>
+                      {ownedItems
+                        .filter(item => 
+                          item.name.toLowerCase().includes(itemSearch.toLowerCase())
+                        )
+                        .map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => toggleItem(item.id)}
+                            className="flex items-center gap-3 p-2 hover:bg-slate-600 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.some(i => i.id === item.id)}
+                              readOnly
+                              className="rounded border-slate-500"
+                            />
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-8 h-8 rounded"
+                            />
+                            <div>
+                              <div className="text-white text-sm">{item.name}</div>
+                              <div className="text-slate-400 text-xs">Balance: {item.balance.toString()}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>
@@ -413,13 +504,22 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">USDC Amount</label>
-                {!hasUSDCAllowance ? (
+                {!localUSDCAllowance ? (
                   <button
                     onClick={handleApproveUSDC}
+                    disabled={isApprovingUSDC || isWaitingForUSDCApproval}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600
+                      disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Approve USDC Usage
+                    {isApprovingUSDC || isWaitingForUSDCApproval ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isWaitingForUSDCApproval ? "Confirming..." : "Approving..."}
+                      </>
+                    ) : (
+                      "Approve USDC Usage"
+                    )}
                   </button>
                 ) : (
                   <div className="space-y-1">

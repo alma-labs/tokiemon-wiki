@@ -37,11 +37,42 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
   const [formError, setFormError] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [isApprovingNFT, setIsApprovingNFT] = useState(false);
+  const [isApprovingUSDC, setIsApprovingUSDC] = useState(false);
+  const [localNFTApproved, setLocalNFTApproved] = useState(false);
+  const [localUSDCAllowance, setLocalUSDCAllowance] = useState(false);
 
   const { writeContract, data: hash } = useWriteContract();
+  const { writeContract: approveNFT, data: nftApprovalHash } = useWriteContract();
+  const { writeContract: approveUSDC, data: usdcApprovalHash } = useWriteContract();
+  
   const { isLoading: isWaitingForTx, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
+  
+  const { isLoading: isWaitingForNFTApproval, isSuccess: nftApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: nftApprovalHash,
+  });
+  
+  const { isLoading: isWaitingForUSDCApproval, isSuccess: usdcApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: usdcApprovalHash,
+  });
+
+  // Handle NFT approval success
+  useEffect(() => {
+    if (nftApprovalSuccess) {
+      setIsApprovingNFT(false);
+      setLocalNFTApproved(true);
+    }
+  }, [nftApprovalSuccess]);
+
+  // Handle USDC approval success
+  useEffect(() => {
+    if (usdcApprovalSuccess) {
+      setIsApprovingUSDC(false);
+      setLocalUSDCAllowance(true);
+    }
+  }, [usdcApprovalSuccess]);
 
   // Handle transaction success
   useEffect(() => {
@@ -59,15 +90,13 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
     BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS]
   );
   const { ownedItems } = useUserAssets();
-  const { writeContract: approveNFT } = useWriteContract();
-  const { writeContract: approveUSDC } = useWriteContract();
 
   // Get USDC balance
   const { data: usdcBalance = 0n } = useReadContract({
     address: USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS],
     abi: ERC20_ABI,
     functionName: "balanceOf",
-    args: address ? [address] : undefined,
+    args: [address ?? "0x0000000000000000000000000000000000000000"],
   });
 
   const formattedUsdcBalance = usdcBalance ? formatUnits(usdcBalance, 6) : "0";
@@ -77,7 +106,7 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
     address: LENS_CONTRACTS[chainId as keyof typeof LENS_CONTRACTS],
     abi: LENS_ABI,
     functionName: "getUserTokiemon",
-    args: [address, 0n, 1000n]
+    args: [address ?? "0x0000000000000000000000000000000000000000", 0n, 1000n],
   });
 
   // Fetch Tokiemon metadata when we have the IDs
@@ -131,6 +160,7 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
 
   const handleApproveNFT = async () => {
     try {
+      setIsApprovingNFT(true);
       approveNFT({
         address: TOKIEMON_NFT_CONTRACTS[chainId as keyof typeof TOKIEMON_NFT_CONTRACTS],
         abi: TOKIEMON_NFT_ABI,
@@ -139,11 +169,13 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
       });
     } catch (error) {
       console.error("Failed to approve NFT:", error);
+      setIsApprovingNFT(false);
     }
   };
 
   const handleApproveUSDC = async () => {
     try {
+      setIsApprovingUSDC(true);
       approveUSDC({
         address: USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS],
         abi: ERC20_ABI,
@@ -155,6 +187,7 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
       });
     } catch (error) {
       console.error("Failed to approve USDC:", error);
+      setIsApprovingUSDC(false);
     }
   };
 
@@ -228,6 +261,12 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
     );
   };
 
+  // Initialize local state from contract state
+  useEffect(() => {
+    setLocalNFTApproved(isNFTApproved);
+    setLocalUSDCAllowance(hasUSDCAllowance);
+  }, [isNFTApproved, hasUSDCAllowance]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
@@ -246,13 +285,22 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Tokiemon</label>
-                {!isNFTApproved ? (
+                {!localNFTApproved ? (
                   <button
                     onClick={handleApproveNFT}
+                    disabled={isApprovingNFT || isWaitingForNFTApproval}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600
+                      disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Approve Tokiemon Usage
+                    {isApprovingNFT || isWaitingForNFTApproval ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isWaitingForNFTApproval ? "Confirming..." : "Approving..."}
+                      </>
+                    ) : (
+                      "Approve Tokiemon Usage"
+                    )}
                   </button>
                 ) : (
                   <div className="relative">
@@ -301,12 +349,27 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
                             <div className="flex-grow">
                               <div className="flex items-center gap-2">
                                 <span className="text-white text-sm">{tokiemon.name}</span>
-                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}</span>
-                                <span className="text-slate-400 text-xs">{tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}</span>
+                                <span className="text-white text-xs flex items-center gap-1">
+                                  <img 
+                                    src={`https://raw.githubusercontent.com/alma-labs/tokiemon-lists/main/assets/tokens/${tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value || "USDC"}.png`}
+                                    alt=""
+                                    className="w-4 h-4 rounded-full"
+                                  />
+                                  {tokiemon.attributes.find(attr => attr.trait_type === 'Community')?.value}
+                                </span>
+                                <span className="text-white text-xs">
+                                  {tokiemon.attributes.find(attr => attr.trait_type === 'Purchase Tier')?.value}
+                                </span>
                                 <span className={`text-xs ${
-                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare' ? 'text-yellow-500' :
-                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon' ? 'text-blue-500' :
-                                  'text-slate-400'
+                                  tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Legendary'
+                                    ? 'text-blue-400 font-bold animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,1)] scale-110'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Epic'
+                                    ? 'text-purple-400 font-bold drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Rare'
+                                    ? 'text-red-400 font-semibold drop-shadow-[0_0_6px_rgba(248,113,113,0.7)]'
+                                    : tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value === 'Uncommon'
+                                    ? 'text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]'
+                                    : 'text-gray-300'
                                 }`}>
                                   {tokiemon.attributes.find(attr => attr.trait_type === 'Rarity')?.value}
                                 </span>
@@ -432,13 +495,22 @@ export function CreateCounterOfferModal({ onClose, listingId, listingName, refet
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">USDC Amount</label>
-                {!hasUSDCAllowance ? (
+                {!localUSDCAllowance ? (
                   <button
                     onClick={handleApproveUSDC}
+                    disabled={isApprovingUSDC || isWaitingForUSDCApproval}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 
-                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600"
+                      text-white rounded-lg transition-colors duration-200 font-medium border border-slate-600
+                      disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Approve USDC Usage
+                    {isApprovingUSDC || isWaitingForUSDCApproval ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isWaitingForUSDCApproval ? "Confirming..." : "Approving..."}
+                      </>
+                    ) : (
+                      "Approve USDC Usage"
+                    )}
                   </button>
                 ) : (
                   <div className="space-y-1">
