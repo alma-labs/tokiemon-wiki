@@ -281,7 +281,7 @@ export function BlackMarketContent() {
   const [selectedListingForDetails, setSelectedListingForDetails] = useState<bigint | null>(null);
   const [itemsInfo, setItemsInfo] = useState<Record<string, ItemInfo>>({});
   const [tokiemonInfo, setTokiemonInfo] = useState<Record<string, TokiemonInfo>>({});
-  const [activeTab, setActiveTab] = useState<"open" | "your-listings" | "your-offers" | "history">("open");
+  const [activeTab, setActiveTab] = useState<"all" | "open" | "your-listings" | "your-offers" | "history">("all");
 
   const { data: activeListings, refetch: refetchActiveListings } = useReadContract({
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
@@ -444,6 +444,9 @@ export function BlackMarketContent() {
         .map((i) => ({ listing: listingsWithOffers[i], id: activeListings![i] }))
         .sort((a, b) => Number(b.id - a.id))
         .filter(({ listing }) => {
+          if (activeTab === "all") {
+            return true;
+          }
           if (activeTab === "open") {
             return listing.owner.toLowerCase() !== address?.toLowerCase();
           }
@@ -499,6 +502,13 @@ export function BlackMarketContent() {
             </div>
           </div>
           <div className="flex gap-4 text-sm">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`transition-colors duration-200 
+                ${activeTab === "all" ? "text-white font-medium" : "text-slate-400 hover:text-slate-300"}`}
+            >
+              All
+            </button>
             <button
               onClick={() => setActiveTab("open")}
               className={`transition-colors duration-200 
