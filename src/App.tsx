@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, Sword, Ghost, Wallet, Skull } from "lucide-react";
+import { ExternalLink, Sword, Ghost, Wallet, Skull, Menu, X, ChevronDown } from "lucide-react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Market } from "./components/Market";
@@ -19,6 +19,19 @@ export default function App() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.mobile-menu-container')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const path = location.pathname.slice(1) || "items";
@@ -77,7 +90,6 @@ export default function App() {
                   />
                   Tokiemon Wiki & Market
                 </h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base mt-0.5">Discover Tokiemon Monsters & Items of Degenia</p>
               </div>
               {activeSection === "market" || activeSection === "black-market" ? (
                 <Market />
@@ -107,57 +119,99 @@ export default function App() {
               )}
             </div>
 
-            <nav className="flex flex-wrap gap-1 mt-3">
-              <button
-                onClick={() => handleNavigation("items")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                  activeSection === "items"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                }`}
-              >
-                <Sword className="w-3.5 h-3.5" />
-                Items
-              </button>
-              <button
-                onClick={() => handleNavigation("monsters")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                  activeSection === "monsters"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                }`}
-              >
-                <Ghost className="w-3.5 h-3.5" />
-                Monsters
-              </button>
-              <button
-                onClick={() => handleNavigation("market")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                  activeSection === "market"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                }`}
-              >
-                <Wallet className="w-3.5 h-3.5" />
-                <span>Market</span>
-                <span className="text-[10px] px-1.5 py-0.5 bg-[#1da1f2] text-white rounded-full font-medium leading-none">
-                  beta
-                </span>
-              </button>
-              <button
-                onClick={() => handleNavigation("black-market")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                  activeSection === "black-market"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                }`}
-              >
-                <Skull className="w-3.5 h-3.5" />
-                <span>Black Market</span>
-                <span className="text-[10px] px-1.5 py-0.5 bg-red-500 text-white rounded-full font-medium leading-none">
-                  alpha
-                </span>
-              </button>
+            <nav className="flex md:flex-wrap gap-1 mt-3">
+              <div className="w-full md:w-auto mobile-menu-container">
+                <button
+                  className="md:hidden flex items-center justify-between w-full text-white p-2 hover:bg-slate-700 rounded-lg bg-slate-700/50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMobileMenuOpen(!isMobileMenuOpen);
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {activeSection === "items" && <Sword className="w-3.5 h-3.5" />}
+                    {activeSection === "monsters" && <Ghost className="w-3.5 h-3.5" />}
+                    {activeSection === "market" && <Wallet className="w-3.5 h-3.5" />}
+                    {activeSection === "black-market" && <Skull className="w-3.5 h-3.5" />}
+                    <span className="capitalize">{activeSection.replace("-", " ")}</span>
+                    {(activeSection === "market" || activeSection === "black-market") && (
+                      <span className={`text-[10px] px-1.5 py-0.5 ${
+                        activeSection === "market" ? "bg-[#1da1f2]" : "bg-red-500"
+                      } text-white rounded-full font-medium leading-none`}>
+                        {activeSection === "market" ? "beta" : "alpha"}
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <div className={`${
+                  isMobileMenuOpen ? 'flex' : 'hidden'
+                } md:flex flex-col md:flex-row absolute md:relative left-0 right-0 top-full md:top-auto bg-slate-800 md:bg-transparent p-2 md:p-0 gap-1 shadow-lg md:shadow-none border-t border-slate-700/50 md:border-0`}>
+                  <button
+                    onClick={() => {
+                      handleNavigation("items");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                      activeSection === "items"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Sword className="w-3.5 h-3.5" />
+                    Items
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleNavigation("monsters");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                      activeSection === "monsters"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Ghost className="w-3.5 h-3.5" />
+                    Monsters
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleNavigation("market");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                      activeSection === "market"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    <span>Market</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-[#1da1f2] text-white rounded-full font-medium leading-none">
+                      beta
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleNavigation("black-market");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                      activeSection === "black-market"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Skull className="w-3.5 h-3.5" />
+                    <span>Black Market</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-red-500 text-white rounded-full font-medium leading-none">
+                      alpha
+                    </span>
+                  </button>
+                </div>
+              </div>
             </nav>
           </div>
         </header>
