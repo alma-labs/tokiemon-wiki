@@ -271,7 +271,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-800 rounded-lg max-w-md w-full">
-        <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
+        <div className="max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">Create Black Market Listing</h2>
@@ -339,7 +339,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                     
                     {showTokiemonDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
-                        shadow-lg max-h-60 overflow-auto">
+                        shadow-lg max-h-[70vh] overflow-auto">
                         <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
                           <input
                             type="text"
@@ -444,7 +444,7 @@ export function CreateListingModal({ onClose }: CreateListingModalProps) {
                   
                   {showItemsDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg 
-                      shadow-lg max-h-60 overflow-auto">
+                      shadow-lg max-h-[70vh] overflow-auto">
                       <div className="sticky top-0 bg-slate-700 p-2 border-b border-slate-600">
                         <input
                           type="text"

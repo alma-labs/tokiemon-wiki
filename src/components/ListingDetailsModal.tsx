@@ -144,7 +144,7 @@ export function ListingDetailsModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-slate-800 rounded-lg w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
+        <div className="max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
