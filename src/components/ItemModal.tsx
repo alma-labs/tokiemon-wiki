@@ -1,5 +1,8 @@
 import { Item } from '../types';
 import { X, ExternalLink } from 'lucide-react';
+import { useReadContract, useChainId } from 'wagmi';
+import { ITEM_CONTRACTS } from '../config/contracts';
+import { ITEM_ABI } from '../config/abis';
 
 interface ItemModalProps {
   item: Item;
@@ -7,6 +10,15 @@ interface ItemModalProps {
 }
 
 export default function ItemModal({ item, onClose }: ItemModalProps) {
+  const chainId = useChainId();
+
+  const { data: totalSupply } = useReadContract({
+    address: ITEM_CONTRACTS[chainId as keyof typeof ITEM_CONTRACTS],
+    abi: ITEM_ABI,
+    functionName: "totalSupply",
+    args: [BigInt(item.id)],
+  });
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
       <div className="bg-[#1a2432] border border-[#2a3844] rounded-lg max-w-2xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto text-[#e2e8f0] shadow-[0_0_20px_rgba(0,0,0,0.5)]">
@@ -83,6 +95,8 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
                         <span>{item.maxSupply}</span>
                       </>
                     )}
+                    <span className="text-gray-400">Total Supply:</span>
+                    <span>{totalSupply ? totalSupply.toString() : '...'}</span>
                   </div>
                 </div>
 
