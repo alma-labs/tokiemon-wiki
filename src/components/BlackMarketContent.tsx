@@ -87,7 +87,7 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
 
   useEffect(() => {
     if (tradeHistory) {
-      setTrades(tradeHistory as TradeDetails[]);
+      setTrades((tradeHistory as TradeDetails[]).sort((a, b) => Number(b.timestamp - a.timestamp)));
       setLoading(false);
 
       // Collect all unique Tokiemon IDs from the trade history
