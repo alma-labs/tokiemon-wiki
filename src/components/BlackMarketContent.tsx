@@ -79,7 +79,7 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
     abi: BLACK_MARKET_ABI,
     functionName: "getTradeHistory",
-    args: [BigInt(currentPage) * tradesPerPage, tradesPerPage],
+    args: [BigInt(0), BigInt(1000)], // Get a large batch of trades to sort
   });
 
   const listingOwnerUsernames = useUsernames(trades.map(trade => trade.listingOwner));
@@ -87,12 +87,18 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
 
   useEffect(() => {
     if (tradeHistory) {
-      setTrades((tradeHistory as TradeDetails[]).sort((a, b) => Number(b.timestamp - a.timestamp)));
+      // Sort all trades by timestamp descending
+      const sortedTrades = (tradeHistory as TradeDetails[]).sort((a, b) => Number(b.timestamp - a.timestamp));
+      
+      // Apply pagination after sorting
+      const start = currentPage * Number(tradesPerPage);
+      const end = start + Number(tradesPerPage);
+      setTrades(sortedTrades.slice(start, end));
       setLoading(false);
 
-      // Collect all unique Tokiemon IDs from the trade history
+      // Collect all unique Tokiemon IDs from the visible trades
       const tokiemonIds = new Set<string>();
-      (tradeHistory as TradeDetails[]).forEach(trade => {
+      sortedTrades.slice(start, end).forEach(trade => {
         trade.listingTokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
         trade.offerTokiemonIds.forEach(id => tokiemonIds.add(id.toString()));
       });
@@ -112,7 +118,7 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
           .catch(err => console.error('Failed to load Tokiemon metadata:', err));
       }
     }
-  }, [tradeHistory, chainId, localTokiemonInfo]);
+  }, [tradeHistory, chainId, localTokiemonInfo, currentPage, tradesPerPage]);
 
   if (loading) {
     return (
