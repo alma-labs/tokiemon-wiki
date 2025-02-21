@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Item } from '../types';
 import ItemModal from './ItemModal';
+import { Gift } from 'lucide-react';
 
 interface ItemGridProps {
   items: Item[];
@@ -29,7 +30,16 @@ export default function ItemGrid({ items }: ItemGridProps) {
               transform hover:scale-105 transition-transform duration-200"
           >
             <div className="p-3 md:p-4">
-              <div className="bg-[#141c27] rounded p-2 mb-3 shadow-inner">
+              <div className="relative bg-[#141c27] rounded p-2 mb-3 shadow-inner">
+                {item.excludeLootbox === false && (
+                  <div className="absolute top-2 right-2 bg-[#1a2432]/80 p-1.5 rounded-full group">
+                    <Gift className="w-4 h-4 text-cyan-400" />
+                    <div className="absolute invisible group-hover:visible bg-black/90 text-white text-xs py-1 px-2 rounded 
+                      -bottom-8 right-0 whitespace-nowrap z-10">
+                      Is/Was Available in Lootbox
+                    </div>
+                  </div>
+                )}
                 <img
                   src={item.image}
                   alt={item.name}

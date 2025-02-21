@@ -21,6 +21,7 @@ export interface Item {
   slot?: string;
   secondarySlot?: string;
   maxSupply?: number;
+  excludeLootbox?: boolean;
 }
 
 export interface Community {
