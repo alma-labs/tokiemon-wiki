@@ -22,6 +22,30 @@ export interface Item {
   secondarySlot?: string;
   maxSupply?: number;
   excludeLootbox?: boolean;
+  recipe?: {
+    inputs: Array<{
+      itemId: string;
+      amount: number;
+    }>;
+    requiredSkillLevel?: number;
+    delay?: number;
+    earnedXpAmount?: number;
+  };
+  disassemblyConfig?: {
+    guaranteedDrops: Array<{
+      itemId: string;
+      amount: number;
+    }>;
+    randomDrop?: {
+      itemId: string;
+      minAmount: number;
+      maxAmount: number;
+    };
+    specialDrop?: {
+      itemId: string;
+      probability: number;
+    };
+  };
 }
 
 export interface Community {

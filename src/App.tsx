@@ -9,6 +9,7 @@ import { Item, Community } from "./types";
 import { MarketContent } from "./components/MarketContent";
 import { ChainGuard } from "./components/ChainGuard";
 import { BlackMarketContent } from "./components/BlackMarketContent";
+import ItemPage from "./components/ItemPage";
 
 export default function App() {
   const navigate = useNavigate();
@@ -240,6 +241,7 @@ export default function App() {
                     />
                   }
                 />
+                <Route path="/items/:id" element={<ItemPage items={items} />} />
                 <Route path="/monsters" element={<MonstersSection communities={communities} />} />
                 <Route path="/market" element={<MarketContent />} />
                 <Route path="/black-market" element={<BlackMarketContent />} />
