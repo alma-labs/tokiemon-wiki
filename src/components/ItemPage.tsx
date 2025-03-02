@@ -128,6 +128,22 @@ export default function ItemPage({ items }: { items: Item[] }) {
                     )}
                     <span className="text-gray-400">Total Supply:</span>
                     <span>{totalSupply ? totalSupply.toString() : "..."}</span>
+                    {item.activeCaptureTiers && item.activeCaptureTiers.length > 0 && (
+                      <>
+                        <span className="text-gray-400">Capture Tiers:</span>
+                        <span>
+                          {item.activeCaptureTiers.map(tier => {
+                            switch(tier) {
+                              case '1': return 'Kawaii';
+                              case '2': return 'Dragon';
+                              case '3': return 'Degen';
+                              case '4': return 'Starter';
+                              default: return tier;
+                            }
+                          }).join(', ')}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

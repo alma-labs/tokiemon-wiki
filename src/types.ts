@@ -22,6 +22,7 @@ export interface Item {
   secondarySlot?: string;
   maxSupply?: number;
   excludeLootbox?: boolean;
+  activeCaptureTiers?: string[];
   recipe?: {
     inputs: Array<{
       itemId: string;

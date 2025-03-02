@@ -1,5 +1,5 @@
 import { Item } from "../types";
-import { Gift } from "lucide-react";
+import { Gift, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useRef } from "react";
 
@@ -38,17 +38,30 @@ export default function ItemGrid({ items }: ItemGridProps) {
         >
           <div className="p-3 md:p-4">
             <div className="relative bg-[#141c27] rounded p-2 mb-3 shadow-inner">
-              {item.excludeLootbox === false && (
-                <div className="absolute top-2 right-2 bg-[#1a2432]/80 p-1.5 rounded-full group">
-                  <Gift className="w-4 h-4 text-cyan-400" />
-                  <div
-                    className="absolute invisible group-hover:visible bg-black/90 text-white text-xs py-1 px-2 rounded 
-                    -bottom-8 right-0 whitespace-nowrap z-10"
-                  >
-                    Is/Was Available in Lootbox
+              <div className="absolute top-2 right-2 flex gap-1">
+                {item.excludeLootbox === false && (
+                  <div className="bg-[#1a2432]/80 p-1.5 rounded-full group">
+                    <Gift className="w-4 h-4 text-cyan-400" />
+                    <div
+                      className="absolute invisible group-hover:visible bg-black/90 text-white text-xs py-1 px-2 rounded 
+                      -bottom-8 right-0 whitespace-nowrap z-10"
+                    >
+                      Is/Was Available in Lootbox
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                {item.activeCaptureTiers && item.activeCaptureTiers.length > 0 && (
+                  <div className="bg-[#1a2432]/80 p-1.5 rounded-full group">
+                    <Target className="w-4 h-4 text-green-400" />
+                    <div
+                      className="absolute invisible group-hover:visible bg-black/90 text-white text-xs py-1 px-2 rounded 
+                      -bottom-8 right-0 whitespace-nowrap z-10"
+                    >
+                      Available in Capture
+                    </div>
+                  </div>
+                )}
+              </div>
               <img src={item.image} alt={item.name} className="w-full h-32 md:h-48 object-contain" />
             </div>
             <h3 className="text-base md:text-lg font-bold mb-2 truncate text-[#e2e8f0]">{item.name}</h3>
