@@ -23,6 +23,10 @@ export interface Item {
   maxSupply?: number;
   excludeLootbox?: boolean;
   activeCaptureTiers?: string[];
+  socialLinks?: Array<{
+    platform: string;
+    url: string;
+  }>;
   recipe?: {
     inputs: Array<{
       itemId: string;

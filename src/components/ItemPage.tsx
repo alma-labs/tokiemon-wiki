@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Item } from "../types";
-import { ExternalLink, ArrowLeft } from "lucide-react";
+import { ExternalLink, ArrowLeft, Globe, MessageCircle } from "lucide-react";
 import { useReadContract, useChainId } from "wagmi";
 import { ITEM_CONTRACTS } from "../config/contracts";
 import { ITEM_ABI } from "../config/abis";
@@ -60,6 +60,45 @@ export default function ItemPage({ items }: { items: Item[] }) {
           <div className="mb-6">
             <h1 className="text-3xl font-bold">{item.name}</h1>
             <p className="text-sm text-gray-400">ID: {item.id}</p>
+            {item.socialLinks && item.socialLinks.length > 0 && (
+              <div className="flex gap-1 mt-2">
+                {item.socialLinks.map((link, index) => {
+                  let icon;
+                  switch (link.platform) {
+                    case 'twitter':
+                      icon = <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13.3174 10.7749L19.1457 4H17.7646L12.7852 9.88256L8.80452 4H4L10.0127 12.8955L4 20H5.38119L10.5446 13.7878L14.6981 20H19.5L13.3171 10.7749H13.3174ZM11.1561 12.9999L10.3984 11.9048L5.7489 5.28921H8.16058L11.8555 10.5641L12.6132 11.6593L17.4452 18.5567H15.0335L11.1561 13.0002V12.9999Z"/></svg>;
+                      break;
+                    case 'warpcast':
+                      icon = <MessageCircle className="w-6 h-6" />;
+                      break;
+                    case 'coingecko':
+                      icon = <img src="https://static.coingecko.com/s/thumbnail-007177f3eca19695592f0b8b0eabbdae282b54154e1be912285c9034ea6cbaf2.png" className="w-6 h-6 rounded-full" alt="CoinGecko" />;
+                      break;
+                    case 'flooz':
+                      icon = <img src="https://storage.googleapis.com/iris_buy_bot_logos/-1001907230551_0x0000000000000000000000000000000000000000_0x0000000000000000000000000000000000000000_eth_hub_logo-317e5607-3a0e-46a1-948c-34d89c6b2bd8" className="w-6 h-6 rounded-full" alt="Flooz" />;
+                      break;
+                    case 'discord':
+                      icon = <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" className="w-6 h-6 rounded-full" alt="Discord" />;
+                      break;
+                    default:
+                      icon = <Globe className="w-6 h-6" />;
+                  }
+                  
+                  return (
+                    <a 
+                      key={index}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-10 h-10 bg-[#141c27] hover:bg-[#1a2432] rounded-full transition-colors duration-200"
+                      title={link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                    >
+                      {icon}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-8">
