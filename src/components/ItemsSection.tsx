@@ -1,7 +1,8 @@
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import { MultiSelect } from "./MultiSelect";
 import ItemGrid from "./ItemGrid";
 import { Item } from "../types";
+import { useState } from "react";
 
 interface ItemsSectionProps {
   items: Item[];
@@ -22,6 +23,8 @@ export default function ItemsSection({
   selectedRarities,
   setSelectedRarities,
 }: ItemsSectionProps) {
+  const [showPartnerItemsOnly, setShowPartnerItemsOnly] = useState(false);
+  
   const uniqueTypes = Array.from(
     new Set(items.map((item) => item.type))
   ).sort();
@@ -37,8 +40,10 @@ export default function ItemsSection({
       selectedTypes.length === 0 || selectedTypes.includes(item.type);
     const matchesRarity =
       selectedRarities.length === 0 || selectedRarities.includes(item.rarity);
+    const matchesPartner = 
+      !showPartnerItemsOnly || (item.socialLinks && item.socialLinks.length > 0);
 
-    return matchesSearch && matchesType && matchesRarity;
+    return matchesSearch && matchesType && matchesRarity && matchesPartner;
   });
 
   return (
@@ -74,6 +79,20 @@ export default function ItemsSection({
               onChange={setSelectedRarities}
               placeholder="All Rarities"
             />
+          </div>
+          
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowPartnerItemsOnly(!showPartnerItemsOnly)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
+                showPartnerItemsOnly 
+                  ? "bg-yellow-500 text-slate-900 hover:bg-yellow-400" 
+                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              }`}
+            >
+              <Star className={`w-4 h-4 ${showPartnerItemsOnly ? "fill-slate-900" : ""}`} />
+              <span>Partner Items</span>
+            </button>
           </div>
         </div>
       </div>

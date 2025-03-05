@@ -1,5 +1,5 @@
 import { Item } from "../types";
-import { Gift, Target } from "lucide-react";
+import { Gift, Target, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useRef } from "react";
 
@@ -38,7 +38,10 @@ export default function ItemGrid({ items }: ItemGridProps) {
         >
           <div className="p-3 md:p-4">
             <div className="relative bg-[#141c27] rounded p-2 mb-3 shadow-inner">
-              <div className="absolute top-2 right-2 flex gap-1">
+              {item.socialLinks && item.socialLinks.length > 0 && (
+                <div className="absolute top-0 left-0 w-full h-full border-2 border-yellow-400 rounded pointer-events-none" style={{ boxShadow: '0 0 10px rgba(250, 204, 21, 0.5)' }}></div>
+              )}
+              <div className="absolute top-2 right-2 flex gap-1 z-10">
                 {item.excludeLootbox === false && (
                   <div className="bg-[#1a2432]/80 p-1.5 rounded-full group">
                     <Gift className="w-4 h-4 text-cyan-400" />
@@ -61,10 +64,28 @@ export default function ItemGrid({ items }: ItemGridProps) {
                     </div>
                   </div>
                 )}
+                {item.socialLinks && item.socialLinks.length > 0 && (
+                  <div className="bg-[#1a2432]/80 p-1.5 rounded-full group">
+                    <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
+                    <div
+                      className="absolute invisible group-hover:visible bg-black/90 text-white text-xs py-1 px-2 rounded 
+                      -bottom-8 right-0 whitespace-nowrap z-10"
+                    >
+                      Partner Item
+                    </div>
+                  </div>
+                )}
               </div>
               <img src={item.image} alt={item.name} className="w-full h-32 md:h-48 object-contain" />
             </div>
-            <h3 className="text-base md:text-lg font-bold mb-2 truncate text-[#e2e8f0]">{item.name}</h3>
+            <h3 className="text-base md:text-lg font-bold mb-2 truncate text-[#e2e8f0]">
+              {item.name}
+              {item.socialLinks && item.socialLinks.length > 0 && (
+                <span className="ml-1 inline-flex items-center">
+                  <Star className="w-3 h-3 text-yellow-400 inline" fill="currentColor" />
+                </span>
+              )}
+            </h3>
             <div className="flex flex-col gap-2">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                 <span className="text-xs md:text-sm font-medium text-[#94a3b8]">{item.type}</span>
