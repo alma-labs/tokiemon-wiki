@@ -188,9 +188,9 @@ const AIRDROP_ADDRESSES = [
 ];
 
 const CATEGORIES = [
-  { name: "Tokiemaster", threshold: 100000, mints: 10 },
-  { name: "Tokiegrinder", threshold: 50000, mints: 5 },
-  { name: "Tokiestud", threshold: 25000, mints: 3 },
+  { name: "Tokiemaster", threshold: 100000, mints: 8 },
+  { name: "Tokiegrinder", threshold: 50000, mints: 4 },
+  { name: "Tokiestud", threshold: 25000, mints: 2 },
   { name: "Tokielover", threshold: 10000, mints: 1 },
 ];
 
