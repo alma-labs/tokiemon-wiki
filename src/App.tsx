@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, Sword, Ghost, Wallet, Skull, Menu, X, ChevronDown } from "lucide-react";
+import { ExternalLink, Sword, Ghost, Wallet, Skull, Menu, X, ChevronDown, Gift } from "lucide-react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Market } from "./components/Market";
@@ -10,11 +10,14 @@ import { MarketContent } from "./components/MarketContent";
 import { ChainGuard } from "./components/ChainGuard";
 import { BlackMarketContent } from "./components/BlackMarketContent";
 import ItemPage from "./components/ItemPage";
+import UnimonAirdrop from "./components/UnimonAirdrop";
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeSection, setActiveSection] = useState<"items" | "monsters" | "market" | "black-market">("items");
+  const [activeSection, setActiveSection] = useState<
+    "items" | "monsters" | "market" | "black-market" | "unimon-airdrop"
+  >("items");
   const [items, setItems] = useState<Item[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -25,18 +28,18 @@ export default function App() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.mobile-menu-container')) {
+      if (!target.closest(".mobile-menu-container")) {
         setIsMobileMenuOpen(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   useEffect(() => {
     const path = location.pathname.slice(1) || "items";
-    setActiveSection(path as "items" | "monsters" | "market" | "black-market");
+    setActiveSection(path as "items" | "monsters" | "market" | "black-market" | "unimon-airdrop");
   }, [location]);
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export default function App() {
     fetchCommunities();
   }, [location.pathname, activeSection]);
 
-  const handleNavigation = (section: "items" | "monsters" | "market" | "black-market") => {
+  const handleNavigation = (section: "items" | "monsters" | "market" | "black-market" | "unimon-airdrop") => {
     setActiveSection(section);
     navigate(`/${section}`);
   };
@@ -92,7 +95,7 @@ export default function App() {
                   Tokiemon Wiki & Market
                 </h1>
               </div>
-              {activeSection === "market" || activeSection === "black-market" ? (
+              {activeSection === "market" || activeSection === "black-market" || activeSection === "unimon-airdrop" ? (
                 <Market />
               ) : (
                 <div className="flex gap-2">
@@ -134,21 +137,26 @@ export default function App() {
                     {activeSection === "monsters" && <Ghost className="w-3.5 h-3.5" />}
                     {activeSection === "market" && <Wallet className="w-3.5 h-3.5" />}
                     {activeSection === "black-market" && <Skull className="w-3.5 h-3.5" />}
+                    {activeSection === "unimon-airdrop" && <Gift className="w-3.5 h-3.5" />}
                     <span className="capitalize">{activeSection.replace("-", " ")}</span>
                     {(activeSection === "market" || activeSection === "black-market") && (
-                      <span className={`text-[10px] px-1.5 py-0.5 ${
-                        activeSection === "market" ? "bg-[#1da1f2]" : "bg-red-500"
-                      } text-white rounded-full font-medium leading-none`}>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 ${
+                          activeSection === "market" ? "bg-[#1da1f2]" : "bg-red-500"
+                        } text-white rounded-full font-medium leading-none`}
+                      >
                         {activeSection === "market" ? "beta" : "alpha"}
                       </span>
                     )}
                   </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isMobileMenuOpen ? "rotate-180" : ""}`} />
                 </button>
-                
-                <div className={`${
-                  isMobileMenuOpen ? 'flex' : 'hidden'
-                } md:flex flex-col md:flex-row absolute md:relative left-0 right-0 top-full md:top-auto bg-slate-800 md:bg-transparent p-2 md:p-0 gap-1 shadow-lg md:shadow-none border-t border-slate-700/50 md:border-0`}>
+
+                <div
+                  className={`${
+                    isMobileMenuOpen ? "flex" : "hidden"
+                  } md:flex flex-col md:flex-row absolute md:relative left-0 right-0 top-full md:top-auto bg-slate-800 md:bg-transparent p-2 md:p-0 gap-1 shadow-lg md:shadow-none border-t border-slate-700/50 md:border-0`}
+                >
                   <button
                     onClick={() => {
                       handleNavigation("items");
@@ -190,9 +198,6 @@ export default function App() {
                   >
                     <Wallet className="w-3.5 h-3.5" />
                     <span>Market</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-[#1da1f2] text-white rounded-full font-medium leading-none">
-                      beta
-                    </span>
                   </button>
                   <button
                     onClick={() => {
@@ -207,8 +212,22 @@ export default function App() {
                   >
                     <Skull className="w-3.5 h-3.5" />
                     <span>Black Market</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-red-500 text-white rounded-full font-medium leading-none">
-                      alpha
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleNavigation("unimon-airdrop");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                      activeSection === "unimon-airdrop"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Gift className="w-3.5 h-3.5" />
+                    <span>Unimon Airdrop</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-pink-500 text-white rounded-full font-medium leading-none">
+                      new
                     </span>
                   </button>
                 </div>
@@ -245,6 +264,7 @@ export default function App() {
                 <Route path="/monsters" element={<MonstersSection communities={communities} />} />
                 <Route path="/market" element={<MarketContent />} />
                 <Route path="/black-market" element={<BlackMarketContent />} />
+                <Route path="/unimon-airdrop" element={<UnimonAirdrop />} />
                 <Route path="/" element={<Navigate to="/items" replace />} />
               </Routes>
             </motion.div>
