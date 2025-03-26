@@ -338,13 +338,16 @@ export default function UnimonAirdrop() {
                         id="unichainAddress"
                         value={unichainAddress}
                         onChange={(e) => setUnichainAddress(e.target.value)}
-                        placeholder="Enter your Unichain address"
+                        placeholder="0x..."
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white 
                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       />
                       <p className="mt-2 text-sm text-slate-400">
                         This address cannot be changed after submission. Your Unimon NFTs will be airdropped to this
                         address on Unichain.
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Unichain is EVM compatible - you can use any standard Ethereum wallet (Metamask, Rabby, etc). Just use your wallet's address.
                       </p>
                     </div>
 
