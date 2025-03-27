@@ -387,6 +387,7 @@ export default function UnimonAirdrop() {
                   <th className="py-3 px-4 text-slate-300 font-medium">Category</th>
                   <th className="py-3 px-4 text-slate-300 font-medium">Rune Threshold</th>
                   <th className="py-3 px-4 text-slate-300 font-medium">Free Unimon</th>
+                  <th className="py-3 px-4 text-slate-300 font-medium">UMN Tokens</th>
                 </tr>
               </thead>
               <tbody>
@@ -402,6 +403,7 @@ export default function UnimonAirdrop() {
                     <td className="py-3 px-4 text-white">{category.name}</td>
                     <td className="py-3 px-4 text-white">{category.threshold.toLocaleString()}</td>
                     <td className="py-3 px-4 text-white">{category.mints}</td>
+                    <td className="py-3 px-4 text-white">{category.mints * 4}</td>
                   </tr>
                 ))}
               </tbody>
