@@ -199,7 +199,7 @@ export default function ItemPage({ items }: { items: Item[] }) {
                             {impact.type === "Mood" && !impact.amount && impact.time
                               ? "Max"
                               : impact.amount && `+${impact.amount}`}
-                            {impact.time && ` (${impact.time / 3600}h)`}
+                            {impact.time && ` (${(impact.time / 3600).toFixed(2)}h)`}
                           </span>
                         </div>
                       ))}

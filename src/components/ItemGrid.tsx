@@ -121,7 +121,7 @@ export default function ItemGrid({ items }: ItemGridProps) {
                     ) : (
                       impact.amount && <span className="text-green-400/70">+{impact.amount}</span>
                     )}
-                    {impact.time && <span className="text-blue-400/70">{impact.time / 3600}h</span>}
+                    {impact.time && <span className="text-blue-400/70">{(impact.time / 3600).toFixed(2)}h</span>}
                     {index < item.impacts.length - 1 && "·"}
                   </span>
                 ))}
