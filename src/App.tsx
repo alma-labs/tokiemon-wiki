@@ -226,9 +226,6 @@ export default function App() {
                   >
                     <Gift className="w-3.5 h-3.5" />
                     <span>Unimon Airdrop</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-pink-500 text-white rounded-full font-medium leading-none">
-                      new
-                    </span>
                   </button>
                 </div>
               </div>

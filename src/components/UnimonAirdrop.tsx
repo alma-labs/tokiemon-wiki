@@ -188,33 +188,15 @@ const AIRDROP_ADDRESSES = [
 ];
 
 const CATEGORIES = [
-  { name: "Tokiemaster", threshold: 100000, mints: 8 },
-  { name: "Tokiegrinder", threshold: 50000, mints: 4 },
-  { name: "Tokiestud", threshold: 25000, mints: 2 },
-  { name: "Tokielover", threshold: 10000, mints: 1 },
+  { name: "Tokiemaster", threshold: 100000, mints: 8, umn: 32 },
+  { name: "Tokiegrinder", threshold: 50000, mints: 4, umn: 16 },
+  { name: "Tokiestud", threshold: 25000, mints: 2, umn: 8 },
+  { name: "Tokielover", threshold: 10000, mints: 1, umn: 4 },
 ];
 
 export default function UnimonAirdrop() {
   const { address, isConnected } = useAccount();
   const [isEligible, setIsEligible] = useState<boolean | null>(null);
-  const [unichainAddress, setUnichainAddress] = useState("");
-  const [isSettingRecipient, setIsSettingRecipient] = useState(false);
-  const [recipientSetSuccess, setRecipientSetSuccess] = useState(false);
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-
-  // Contract interactions
-  const { data: existingRecipient } = useContractRead({
-    address: AIRDROP_CONTRACT as Address,
-    abi: AIRDROP_ABI,
-    functionName: "getRecipient",
-    args: [address as Address],
-  });
-
-  const { writeContract } = useWriteContract();
-
-  const { isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
 
   // Check eligibility whenever address changes
   useEffect(() => {
@@ -238,29 +220,6 @@ export default function UnimonAirdrop() {
     }
   };
 
-  const handleSetRecipient = async () => {
-    if (!unichainAddress || !isEligible || !writeContract) return;
-
-    try {
-      setIsSettingRecipient(true);
-      setRecipientSetSuccess(false);
-
-      const result = await writeContract({
-        address: AIRDROP_CONTRACT as Address,
-        abi: AIRDROP_ABI,
-        functionName: "setRecipient",
-        args: [unichainAddress as Address],
-      });
-
-      if (typeof result === "string") {
-        setTxHash(result as `0x${string}`);
-      }
-    } catch (error) {
-      console.error("Error setting recipient:", error);
-      setIsSettingRecipient(false);
-    }
-  };
-
   const getRuneAmount = () => {
     if (!address) return 0;
     const normalizedUserAddress = address.toLowerCase();
@@ -272,13 +231,6 @@ export default function UnimonAirdrop() {
     const runes = getRuneAmount();
     return CATEGORIES.find((cat) => runes >= cat.threshold) || null;
   };
-
-  useEffect(() => {
-    if (isSuccess) {
-      setRecipientSetSuccess(true);
-      setIsSettingRecipient(false);
-    }
-  }, [isSuccess]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -292,27 +244,24 @@ export default function UnimonAirdrop() {
           <h1 className="text-2xl font-bold text-white">Unimon Airdrop</h1>
         </div>
 
-        {!isConnected ? (
-          <div className="bg-slate-700/50 p-4 rounded-lg mb-8">
-            <p className="text-slate-300">Connect your wallet using the button in the header to check eligibility.</p>
+        <div className="space-y-4 mb-8">
+          <div className="bg-pink-500/20 border border-pink-500/50 p-4 rounded-lg">
+            <h2 className="text-xl font-semibold text-pink-400 mb-2">🎉 Airdrop Registration Complete!</h2>
+            <p className="text-pink-300">
+              The Unimon airdrop registration period has ended. All eligible addresses have been recorded. The airdrop
+              has been distributed on Unichain to the registered addresses.
+            </p>
           </div>
-        ) : (
-          <div className="space-y-4 mb-8">
+
+          {isConnected && (
             <div className="bg-slate-700/50 p-4 rounded-lg">
               <p className="text-slate-300">
                 Connected: <span className="font-mono text-sm">{address}</span>
               </p>
-            </div>
-
-            {isEligible === null ? (
-              <div className="bg-slate-700/50 p-4 rounded-lg">
-                <p className="text-slate-300">Checking eligibility...</p>
-              </div>
-            ) : isEligible ? (
-              <div className="space-y-4">
-                <div className="bg-green-500/20 border border-green-500/50 p-4 rounded-lg">
+              {isEligible === true && (
+                <div className="mt-4 bg-green-500/20 border border-green-500/50 p-4 rounded-lg">
                   <p className="text-green-400 font-medium">
-                    You are eligible! See table below for your Unimon NFT allocation.
+                    Your address was eligible for the airdrop! Check the table below for your allocation.
                   </p>
                   {getUserCategory() && (
                     <p className="text-green-400 mt-2">
@@ -320,63 +269,15 @@ export default function UnimonAirdrop() {
                     </p>
                   )}
                 </div>
-
-                {existingRecipient && existingRecipient !== "0x0000000000000000000000000000000000000000" ? (
-                  <div className="bg-pink-500/20 border border-pink-500/50 p-4 rounded-lg">
-                    <p className="text-pink-400 font-medium">You have already registered for the airdrop!</p>
-                    <p className="text-pink-400 mt-2">Your Unimon NFTs will be sent to:</p>
-                    <p className="text-pink-400 mt-1 font-mono text-sm">{existingRecipient}</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="bg-slate-700/50 p-4 rounded-lg">
-                      <label htmlFor="unichainAddress" className="block text-sm font-medium text-slate-300 mb-2">
-                        Enter Your Unichain Address
-                      </label>
-                      <input
-                        type="text"
-                        id="unichainAddress"
-                        value={unichainAddress}
-                        onChange={(e) => setUnichainAddress(e.target.value)}
-                        placeholder="0x..."
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white 
-                          placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      />
-                      <p className="mt-2 text-sm text-slate-400">
-                        This address cannot be changed after submission. Your Unimon NFTs will be airdropped to this
-                        address on Unichain.
-                      </p>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Unichain is EVM compatible - you can use any standard Ethereum wallet (Metamask, Rabby, etc). Just use your wallet's address.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleSetRecipient}
-                      disabled={isSettingRecipient || !unichainAddress}
-                      className="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg 
-                        transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSettingRecipient ? "Registering Address..." : "Register for Airdrop"}
-                    </button>
-
-                    {recipientSetSuccess && (
-                      <div className="bg-green-500/20 border border-green-500/50 p-4 rounded-lg">
-                        <p className="text-green-400 font-medium">Successfully registered for the airdrop!</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-lg">
-                <p className="text-red-400 font-medium">
-                  Sorry, you are not eligible for the Unimon airdrop. Check table below for requirements.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+              {isEligible === false && (
+                <div className="mt-4 bg-red-500/20 border border-red-500/50 p-4 rounded-lg">
+                  <p className="text-red-400 font-medium">Your address was not eligible for this airdrop.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div>
           <h2 className="text-xl font-semibold text-white mb-4">Airdrop Categories</h2>
