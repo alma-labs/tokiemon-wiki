@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, Sword, Ghost, Wallet, Skull, Menu, X, ChevronDown, Gift } from "lucide-react";
+import { ExternalLink, Sword, Ghost, Wallet, Skull, Menu, X, ChevronDown } from "lucide-react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Market } from "./components/Market";
@@ -10,13 +10,12 @@ import { MarketContent } from "./components/MarketContent";
 import { ChainGuard } from "./components/ChainGuard";
 import { BlackMarketContent } from "./components/BlackMarketContent";
 import ItemPage from "./components/ItemPage";
-import UnimonAirdrop from "./components/UnimonAirdrop";
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeSection, setActiveSection] = useState<
-    "items" | "monsters" | "market" | "black-market" | "unimon-airdrop"
+    "items" | "monsters" | "market" | "black-market"
   >("items");
   const [items, setItems] = useState<Item[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +38,7 @@ export default function App() {
 
   useEffect(() => {
     const path = location.pathname.slice(1) || "items";
-    setActiveSection(path as "items" | "monsters" | "market" | "black-market" | "unimon-airdrop");
+    setActiveSection(path as "items" | "monsters" | "market" | "black-market");
   }, [location]);
 
   useEffect(() => {
@@ -74,7 +73,7 @@ export default function App() {
     fetchCommunities();
   }, [location.pathname, activeSection]);
 
-  const handleNavigation = (section: "items" | "monsters" | "market" | "black-market" | "unimon-airdrop") => {
+  const handleNavigation = (section: "items" | "monsters" | "market" | "black-market") => {
     setActiveSection(section);
     navigate(`/${section}`);
   };
@@ -95,7 +94,7 @@ export default function App() {
                   Tokiemon Wiki & Market
                 </h1>
               </div>
-              {activeSection === "market" || activeSection === "black-market" || activeSection === "unimon-airdrop" ? (
+              {activeSection === "market" || activeSection === "black-market" ? (
                 <Market />
               ) : (
                 <div className="flex gap-2">
@@ -137,7 +136,6 @@ export default function App() {
                     {activeSection === "monsters" && <Ghost className="w-3.5 h-3.5" />}
                     {activeSection === "market" && <Wallet className="w-3.5 h-3.5" />}
                     {activeSection === "black-market" && <Skull className="w-3.5 h-3.5" />}
-                    {activeSection === "unimon-airdrop" && <Gift className="w-3.5 h-3.5" />}
                     <span className="capitalize">{activeSection.replace("-", " ")}</span>
                     {(activeSection === "market" || activeSection === "black-market") && (
                       <span
@@ -213,20 +211,6 @@ export default function App() {
                     <Skull className="w-3.5 h-3.5" />
                     <span>Black Market</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      handleNavigation("unimon-airdrop");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                      activeSection === "unimon-airdrop"
-                        ? "bg-slate-700 text-white"
-                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                    }`}
-                  >
-                    <Gift className="w-3.5 h-3.5" />
-                    <span>Unimon Airdrop</span>
-                  </button>
                 </div>
               </div>
             </nav>
@@ -261,7 +245,6 @@ export default function App() {
                 <Route path="/monsters" element={<MonstersSection communities={communities} />} />
                 <Route path="/market" element={<MarketContent />} />
                 <Route path="/black-market" element={<BlackMarketContent />} />
-                <Route path="/unimon-airdrop" element={<UnimonAirdrop />} />
                 <Route path="/" element={<Navigate to="/items" replace />} />
               </Routes>
             </motion.div>
