@@ -79,7 +79,7 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
     address: BLACK_MARKET_CONTRACTS[chainId as keyof typeof BLACK_MARKET_CONTRACTS],
     abi: BLACK_MARKET_ABI,
     functionName: "getTradeHistory",
-    args: [BigInt(0), BigInt(1000)], // Get a large batch of trades to sort
+    args: [BigInt(0), BigInt(5000)], // Get a large batch of trades to sort
   });
 
   const listingOwnerUsernames = useUsernames(trades.map(trade => trade.listingOwner));
@@ -109,16 +109,18 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
         fetch(`https://api.tokiemon.io/tokiemon?ids=${missingIds.join(',')}&chainId=${chainId}`)
           .then(response => response.json())
           .then(metadata => {
-            const newInfo = { ...localTokiemonInfo };
-            metadata.forEach((tokiemon: TokiemonInfo) => {
-              newInfo[tokiemon.tokenId] = tokiemon;
+            setLocalTokiemonInfo(prev => {
+              const newInfo = { ...prev };
+              metadata.forEach((tokiemon: TokiemonInfo) => {
+                newInfo[tokiemon.tokenId] = tokiemon;
+              });
+              return newInfo;
             });
-            setLocalTokiemonInfo(newInfo);
           })
           .catch(err => console.error('Failed to load Tokiemon metadata:', err));
       }
     }
-  }, [tradeHistory, chainId, localTokiemonInfo, currentPage, tradesPerPage]);
+  }, [tradeHistory, chainId, currentPage, tradesPerPage]);
 
   if (loading) {
     return (
