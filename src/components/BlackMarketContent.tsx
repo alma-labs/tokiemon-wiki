@@ -9,6 +9,12 @@ import { ListingDetailsModal } from "./ListingDetailsModal";
 import { useUsername, useUsernames } from "../hooks/useUsername";
 import { WalletConnect } from "./WalletConnect";
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
 export interface CounterOffer {
   offerId: bigint;
   owner: string;
@@ -138,7 +144,9 @@ function HistoryContent({ itemsInfo, tokiemonInfo }: { itemsInfo: Record<string,
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-lg font-medium text-white">{trade.listingName}</div>
+                  <div className="text-lg font-medium text-white" title={trade.listingName}>
+                    {truncateText(trade.listingName, 20)}
+                  </div>
                   <div className="text-sm text-slate-400">#{trade.listingId.toString()}</div>
                 </div>
                 <div className="text-sm text-slate-400">
@@ -583,7 +591,9 @@ export function BlackMarketContent() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <div className="text-lg font-medium text-white">{listing.name}</div>
+                          <div className="text-lg font-medium text-white" title={listing.name}>
+                            {truncateText(listing.name, 20)}
+                          </div>
                           <div className="text-sm text-slate-400">#{id.toString()}</div>
                           {listing.note && (
                             <div className="group relative">
@@ -592,7 +602,7 @@ export function BlackMarketContent() {
                                 bottom: 'calc(100% + 0.5rem)',
                               }}>
                                 <div className="bg-slate-800 rounded p-2 shadow-lg whitespace-pre-wrap border border-slate-600" style={{ width: 'max-content', maxWidth: '300px' }}>
-                                  <p className="text-slate-300 text-sm">{listing.note}</p>
+                                  <p className="text-slate-300 text-sm">{truncateText(listing.note, 100)}</p>
                                 </div>
                               </div>
                             </div>

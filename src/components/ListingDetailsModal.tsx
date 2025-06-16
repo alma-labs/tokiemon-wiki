@@ -6,6 +6,12 @@ import { Toast } from "./ui/Toast";
 import { useUsername } from "../hooks/useUsername";
 import { useTokiemonDetails, TokiemonDetails } from "../hooks/useTokiemonDetails";
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
 interface TokiemonAttribute {
   trait_type: string;
   value?: string;
@@ -148,13 +154,17 @@ export function ListingDetailsModal({
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h2 className="text-lg font-bold text-white">{listing.name}</h2>
+                <h2 className="text-lg font-bold text-white" title={listing.name}>
+                  {truncateText(listing.name, 40)}
+                </h2>
                 <p className="text-slate-400 text-sm">
                   Listing #{listingId.toString()} •{" "}
                   {ownerUsername || `${listing.owner.slice(0, 6)}...${listing.owner.slice(-4)}`}
                 </p>
                 {listing.note && (
-                  <p className="text-slate-300 text-sm mt-2">{listing.note}</p>
+                                      <p className="text-slate-300 text-sm mt-2" title={listing.note}>
+                      {truncateText(listing.note, 100)}
+                    </p>
                 )}
               </div>
               <div className="flex items-center gap-2">
