@@ -1,3 +1,4 @@
+
 # Tokiemon Wiki & Markets
 
 Interactive wiki for browsing and discovering Tokiemon items, consumables, and equipment. Built with React, TypeScript, and Tailwind CSS.
